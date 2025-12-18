@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(mvn clean compile:*)",
-      "Bash(mvn spring-boot:run:*)"
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(java:*)",
+      "Bash(curl:*)",
+      "Bash(tar:*)",
+      "Bash(cat:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm run build)",
+      "Bash(./node_modules/.bin/tailwindcss:*)",
+      "Bash(mv:*)",
+      "Bash(dir:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run)"
     ]
   }
 }
