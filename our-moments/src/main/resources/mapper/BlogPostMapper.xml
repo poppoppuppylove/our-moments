@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gravity.ourmoments.mapper.BlogPostMapper">
+
+    <resultMap id="BlogPostResultMap" type="com.gravity.ourmoments.entity.BlogPost">
+        <id property="postId" column="post_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="weather" column="weather"/>
+        <result property="mood" column="mood"/>
+        <result property="location" column="location"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+
+        <!-- Nested Select for relations -->
+        <association property="author" column="user_id"
+                     select="com.gravity.ourmoments.mapper.UserMapper.findById"/>
+        <association property="category" column="category_id"
+                     select="com.gravity.ourmoments.mapper.CategoryMapper.findById"/>
+        <collection property="mediaList" column="post_id"
+                    select="com.gravity.ourmoments.mapper.BlogMediaMapper.findByPostId"/>
+        <collection property="tagList" column="post_id"
+                    select="com.gravity.ourmoments.mapper.TagMapper.findByPostId"/>
+    </resultMap>
+
+    <select id="findById" resultMap="BlogPostResultMap">
+        SELECT * FROM blog_post WHERE post_id = #{postId}
+    </select>
+
+    <select id="findPosts" resultMap="BlogPostResultMap">
+        SELECT * FROM blog_post
+        <where>
+            <if test="userId != null">AND user_id = #{userId}</if>
+            <if test="categoryId != null">AND category_id = #{categoryId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="postId">
+        INSERT INTO blog_post (user_id, category_id, title, content, weather, mood, location, status, create_time, update_time)
+        VALUES (#{userId}, #{categoryId}, #{title}, #{content}, #{weather}, #{mood}, #{location}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE blog_post
+        <set>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="weather != null">weather = #{weather},</if>
+            <if test="mood != null">mood = #{mood},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE post_id = #{postId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM blog_post WHERE post_id = #{postId}
+    </delete>
+
+    <insert id="addTagToPost">
+        INSERT INTO blog_post_tag (post_id, tag_id) VALUES (#{postId}, #{tagId})
+    </insert>
+
+    <delete id="removeTagsFromPost">
+        DELETE FROM blog_post_tag WHERE post_id = #{postId}
+    </delete>
+
+</mapper>

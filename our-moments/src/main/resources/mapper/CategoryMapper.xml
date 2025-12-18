@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gravity.ourmoments.mapper.CategoryMapper">
+
+    <resultMap id="CategoryResultMap" type="com.gravity.ourmoments.entity.Category">
+        <id property="categoryId" column="category_id"/>
+        <result property="name" column="name"/>
+        <result property="iconUrl" column="icon_url"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findById" resultMap="CategoryResultMap">
+        SELECT * FROM sys_category WHERE category_id = #{categoryId}
+    </select>
+
+    <select id="findAll" resultMap="CategoryResultMap">
+        SELECT * FROM sys_category ORDER BY sort_order ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="categoryId">
+        INSERT INTO sys_category (name, icon_url, sort_order, create_time)
+        VALUES (#{name}, #{iconUrl}, #{sortOrder}, NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE sys_category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="iconUrl != null">icon_url = #{iconUrl},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        WHERE category_id = #{categoryId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_category WHERE category_id = #{categoryId}
+    </delete>
+
+</mapper>

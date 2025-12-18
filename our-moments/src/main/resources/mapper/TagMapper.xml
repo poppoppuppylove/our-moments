@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gravity.ourmoments.mapper.TagMapper">
+
+    <resultMap id="TagResultMap" type="com.gravity.ourmoments.entity.Tag">
+        <id property="tagId" column="tag_id"/>
+        <result property="name" column="name"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findById" resultMap="TagResultMap">
+        SELECT * FROM sys_tag WHERE tag_id = #{tagId}
+    </select>
+
+    <select id="findAll" resultMap="TagResultMap">
+        SELECT * FROM sys_tag ORDER BY create_time DESC
+    </select>
+
+    <select id="findByPostId" resultMap="TagResultMap">
+        SELECT t.* FROM sys_tag t
+        INNER JOIN blog_post_tag bpt ON t.tag_id = bpt.tag_id
+        WHERE bpt.post_id = #{postId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="tagId">
+        INSERT INTO sys_tag (name, create_time)
+        VALUES (#{name}, NOW())
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM sys_tag WHERE tag_id = #{tagId}
+    </delete>
+
+</mapper>

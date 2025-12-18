@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gravity.ourmoments.mapper.BlogMediaMapper">
+
+    <resultMap id="BlogMediaResultMap" type="com.gravity.ourmoments.entity.BlogMedia">
+        <id property="mediaId" column="media_id"/>
+        <result property="postId" column="post_id"/>
+        <result property="mediaUrl" column="media_url"/>
+        <result property="mediaType" column="media_type"/>
+        <result property="rotation" column="rotation"/>
+        <result property="scale" column="scale"/>
+        <result property="positionX" column="position_x"/>
+        <result property="positionY" column="position_y"/>
+        <result property="filterStyle" column="filter_style"/>
+        <result property="zIndex" column="z_index"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="findByPostId" resultMap="BlogMediaResultMap">
+        SELECT * FROM blog_media WHERE post_id = #{postId} ORDER BY sort_order ASC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="mediaId">
+        INSERT INTO blog_media (post_id, media_url, media_type, rotation, scale, position_x, position_y, filter_style, z_index, sort_order, create_time)
+        VALUES (#{postId}, #{mediaUrl}, #{mediaType}, #{rotation}, #{scale}, #{positionX}, #{positionY}, #{filterStyle}, #{zIndex}, #{sortOrder}, NOW())
+    </insert>
+
+    <delete id="deleteByPostId">
+        DELETE FROM blog_media WHERE post_id = #{postId}
+    </delete>
+
+</mapper>
