@@ -1,6 +1,29 @@
 <template>
   <PaperTexture variant="light" class="min-h-screen">
     <div class="home-page">
+      <!-- 背景上传控件 (右上角) -->
+      <div class="home-page__bg-upload">
+        <HandButton variant="outline" size="sm" @click="triggerBgUpload">
+          更换背景
+        </HandButton>
+        <HandButton
+          v-if="ui.backgroundImage"
+          variant="ghost"
+          size="sm"
+          @click="clearBg"
+          class="ml-2"
+        >
+          恢复默认
+        </HandButton>
+        <input
+          ref="bgInput"
+          type="file"
+          accept="image/*"
+          class="hidden-input"
+          @change="onBgFileChange"
+        />
+      </div>
+
       <!-- 页面头部 -->
       <header class="home-page__header">
         <h1 class="home-page__title">Our Moments</h1>
@@ -51,6 +74,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUiStore } from '@/store/ui'
+import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
@@ -58,7 +83,38 @@ import { mockPosts } from '@/utils/mock'
 import type { BlogPost } from '@/types'
 
 const router = useRouter()
+const ui = useUiStore()
 const posts = ref<BlogPost[]>([])
+const bgInput = ref<HTMLInputElement | null>(null)
+
+function triggerBgUpload() {
+  bgInput.value?.click()
+}
+
+function onBgFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input?.files?.[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过 5MB')
+    input.value = ''
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = reader.result as string
+    ui.setBackgroundImage(dataUrl)
+    input.value = ''
+  }
+  reader.readAsDataURL(file)
+}
+
+function clearBg() {
+  ui.clearBackgroundImage()
+}
+
 
 onMounted(() => {
   // 使用 mock 数据
@@ -92,10 +148,27 @@ function getRandomTapeColor(): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
+  position: relative; // 启用绝对定位子元素
+
+  &__bg-upload {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 60;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(4px);
+    padding: 6px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
 
   &__header {
     text-align: center;
     margin-bottom: 60px;
+    padding-top: 20px; // 为头部增加空间，如果需要
   }
 
   &__title {
@@ -110,6 +183,15 @@ function getRandomTapeColor(): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
     font-family: var(--font-body);
     font-size: 1.1rem;
     color: var(--color-ink-light);
+    margin-bottom: 24px;
+  }
+
+  .hidden-input {
+    display: none;
+  }
+
+  .ml-2 {
+    margin-left: 0.5rem;
   }
 
   &__content {

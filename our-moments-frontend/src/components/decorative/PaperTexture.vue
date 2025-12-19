@@ -8,6 +8,7 @@
     <div
       class="paper-texture__bg-image"
       :style="{
+        backgroundImage: bgImageUrl ? `url(${bgImageUrl})` : undefined,
         transform: `translate(${mouseX * -20}px, ${mouseY * -20}px) scale(1.1)`
       }"
     ></div>
@@ -21,16 +22,23 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useUiStore } from '@/store/ui'
+// @ts-ignore
+import defaultBg from '@/assets/images/backgroundstyle.jpg'
 
 interface Props {
   variant?: 'light' | 'warm' | 'kraft' | 'watercolor'
   bgColor?: string
+  bgImage?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   variant: 'light',
-  bgColor: undefined
+  bgColor: undefined,
+  bgImage: undefined
 })
+
+const ui = useUiStore()
 
 const mouseX = ref(0)
 const mouseY = ref(0)
@@ -41,6 +49,10 @@ function handleMouseMove(event: MouseEvent) {
   mouseX.value = (event.clientX / clientWidth) - 0.5
   mouseY.value = (event.clientY / clientHeight) - 0.5
 }
+
+const bgImageUrl = computed(() => {
+  return props.bgImage || ui.backgroundImage || defaultBg
+})
 
 const bgColor = computed(() => {
   if (props.bgColor) return props.bgColor
@@ -73,7 +85,6 @@ const bgColor = computed(() => {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-image: url('@/assets/images/backgroundstyle.jpg');
     background-size: cover;
     background-position: center;
     z-index: 0;

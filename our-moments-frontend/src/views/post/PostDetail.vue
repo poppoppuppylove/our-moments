@@ -32,18 +32,32 @@
               class="gallery-item gallery-item--inline"
               :style="getMediaStyle(block.media, index)"
             >
-              <div class="gallery-item__frame">
+              <div :class="['gallery-item__frame', `frame--${getFrameStyle(block.media, index)}`]">
                 <img :src="block.media.mediaUrl" :alt="`图片 ${index + 1}`" />
+
+                <!-- 装饰性 SVG：仅在特定样式下显示 -->
+                <!-- 爪印 SVG -->
+                <svg v-if="getFrameStyle(block.media, index) === 'paw'" class="frame-overlay frame-overlay--paw" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M32 44c-8 0-14 6-14 10 0 4 6 6 14 6s14-2 14-6c0-4-6-10-14-10z" fill="#D4C4A8" opacity="0.6"/>
+                  <circle cx="18" cy="18" r="6" fill="#D4C4A8" opacity="0.6"/>
+                  <circle cx="30" cy="10" r="6" fill="#D4C4A8" opacity="0.6"/>
+                  <circle cx="44" cy="18" r="6" fill="#D4C4A8" opacity="0.6"/>
+                </svg>
+
+                <!-- 三叶草 SVG -->
+                <svg v-if="getFrameStyle(block.media, index) === 'clover'" class="frame-overlay frame-overlay--clover" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <g fill="none" stroke="#8CBF65" stroke-width="2">
+                    <circle cx="30" cy="30" r="18" fill="rgba(140, 191, 101, 0.1)"/>
+                    <circle cx="70" cy="30" r="18" fill="rgba(140, 191, 101, 0.1)"/>
+                    <circle cx="50" cy="55" r="18" fill="rgba(140, 191, 101, 0.1)"/>
+                  </g>
+                </svg>
               </div>
+
               <Tape
                 v-if="index % 2 === 0"
                 :variant="getTapeColor(index)"
                 :position="index % 3 === 0 ? 'top-left' : 'top-right'"
-              />
-              <Pin
-                v-else
-                :variant="getPinColor(index)"
-                position="top"
               />
             </div>
           </div>
@@ -174,6 +188,29 @@ function getPinColor(index: number): 'red' | 'blue' | 'green' | 'yellow' | 'purp
   const colors: Array<'red' | 'blue' | 'green' | 'yellow' | 'purple'> = ['red', 'blue', 'green', 'yellow', 'purple']
   return colors[index % colors.length]!
 }
+
+// 相框样式逻辑
+const frameStyles = ['polaroid', 'paw', 'clover'] as const
+type FrameStyle = typeof frameStyles[number]
+
+function hashCode(str: string) {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i)
+    h |= 0
+  }
+  return Math.abs(h)
+}
+
+function getFrameStyle(media: BlogMedia, index: number): FrameStyle {
+  // 如果后端支持，优先使用 media.frameStyle
+  // 目前使用确定性哈希算法，基于 mediaUrl 或 index 来分配样式
+  const key = media.mediaUrl || String(index)
+  // 使用不同的模数以避免与胶带颜色同步
+  const styleIndex = hashCode(key) % frameStyles.length
+  return frameStyles[styleIndex]!
+}
+
 </script>
 
 <style scoped lang="scss">
@@ -300,19 +337,90 @@ function getPinColor(index: number): 'red' | 'blue' | 'green' | 'yellow' | 'purp
 
   &__frame {
     background: white;
-    padding: 10px 10px 30px 10px;
-    box-shadow: var(--shadow-paper);
+    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+    position: relative; // 允许绝对定位装饰物
+    transition: all 0.3s ease;
+
+    // 默认样式 (polaroid)
+    padding: 12px 12px 40px 12px;
 
     img {
       width: 280px;
-      height: 210px;
+      height: 280px; // 拍立得通常是正方形
       object-fit: cover;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+
+      @media (max-width: 768px) {
+        width: 200px;
+        height: 200px;
+      }
+    }
+  }
+
+  // 样式2：米黄爪印边框 (Paw)
+  .frame--paw {
+    background: #f8f3e9; // 米黄色背景
+    padding: 20px;
+    border-radius: 4px;
+
+    // 爪印装饰 SVG 定位
+    .frame-overlay--paw {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 48px;
+      height: 48px;
+      pointer-events: none;
+      transform: rotate(-15deg);
+    }
+
+    img {
+      width: 280px;
+      height: 210px; // 恢复为原来的长宽比，更像相册照片
+      border: none;
+      border-radius: 2px;
 
       @media (max-width: 768px) {
         width: 200px;
         height: 150px;
       }
     }
+  }
+
+  // 样式3：白色三叶草边框 (Clover)
+  .frame--clover {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px; // 更圆润的角
+    border: 1px solid #e0e0e0;
+
+    // 三叶草装饰 SVG 定位
+    .frame-overlay--clover {
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      width: 64px;
+      height: 64px;
+      pointer-events: none;
+      transform: rotate(-10deg);
+    }
+
+    img {
+      width: 280px;
+      height: 210px; // 恢复为原来的长宽比
+      border-radius: 4px;
+
+      @media (max-width: 768px) {
+        width: 200px;
+        height: 150px;
+      }
+    }
+  }
+
+  // 样式1：Polaroid (显式类名，与默认样式一致)
+  .frame--polaroid {
+    // 继承默认样式，不需要额外覆盖
   }
 }
 
