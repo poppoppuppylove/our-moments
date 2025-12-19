@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { useUserStore } from '@/store/user'
 
 const routes: RouteRecordRaw[] = [
+  // ========== 前端阅读端 ==========
   {
     path: '/',
     name: 'Home',
@@ -14,6 +16,46 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/post/PostDetail.vue'),
     meta: { title: '文章详情 - Our Moments' }
   },
+
+  // ========== 后台管理端 ==========
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/admin/AdminLogin.vue'),
+    meta: { title: '管理员登录 - Our Moments' }
+  },
+  {
+    path: '/admin',
+    name: 'AdminLayout',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/admin/posts'
+      },
+      {
+        path: 'posts',
+        name: 'AdminPosts',
+        component: () => import('@/views/admin/PostList.vue'),
+        meta: { title: '文章管理 - Our Moments' }
+      },
+      {
+        path: 'posts/new',
+        name: 'AdminPostNew',
+        component: () => import('@/views/admin/PostEdit.vue'),
+        meta: { title: '新建文章 - Our Moments' }
+      },
+      {
+        path: 'posts/:id/edit',
+        name: 'AdminPostEdit',
+        component: () => import('@/views/admin/PostEdit.vue'),
+        meta: { title: '编辑文章 - Our Moments' }
+      }
+    ]
+  },
+
+  // ========== 其他 ==========
   {
     path: '/login',
     name: 'Login',
@@ -39,9 +81,20 @@ const router = createRouter({
   }
 })
 
-// 路由守卫 - 更新页面标题
+// 路由守卫 - 更新页面标题 + 权限验证
 router.beforeEach((to, _from, next) => {
+  // 更新页面标题
   document.title = (to.meta.title as string) || 'Our Moments'
+
+  // 权限验证
+  if (to.meta.requiresAuth) {
+    const userStore = useUserStore()
+    if (!userStore.isLoggedIn) {
+      next({ name: 'AdminLogin', query: { redirect: to.fullPath } })
+      return
+    }
+  }
+
   next()
 })
 

@@ -67,6 +67,9 @@
           </HandCard>
         </div>
       </main>
+
+      <!-- 页脚 -->
+      <HandFooter />
     </div>
   </PaperTexture>
 </template>
@@ -75,8 +78,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/store/ui'
+import { postApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
+import HandFooter from '@/components/common/HandFooter.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
 import { mockPosts } from '@/utils/mock'
@@ -116,9 +121,16 @@ function clearBg() {
 }
 
 
-onMounted(() => {
-  // 使用 mock 数据
-  posts.value = mockPosts
+onMounted(async () => {
+  // 尝试从后端获取文章
+  try {
+    const response = await postApi.getPosts()
+    posts.value = response
+  } catch (err) {
+    // 如果 API 调用失败，使用 Mock 数据
+    console.warn('API call failed, using mock data')
+    posts.value = mockPosts
+  }
 })
 
 function goToPost(postId: number) {

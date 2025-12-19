@@ -19,8 +19,8 @@ export const postApi = {
   getPosts: (params?: { userId?: number; categoryId?: number; status?: number }) =>
     get<BlogPost[]>('/posts', params),
   getPost: (id: number) => get<BlogPost>(`/posts/${id}`),
-  createPost: (data: BlogPost) => post<BlogPost>('/posts', data),
-  updatePost: (id: number, data: BlogPost) => put<BlogPost>(`/posts/${id}`, data),
+  createPost: (data: Partial<BlogPost>) => post<BlogPost>('/posts', data),
+  updatePost: (id: number, data: Partial<BlogPost>) => put<BlogPost>(`/posts/${id}`, data),
   deletePost: (id: number) => del<void>(`/posts/${id}`),
 }
 

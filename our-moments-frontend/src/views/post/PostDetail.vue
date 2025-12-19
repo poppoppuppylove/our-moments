@@ -1,11 +1,12 @@
 <template>
   <PaperTexture variant="warm" class="min-h-screen">
     <div class="post-detail" v-if="post">
-      <!-- 返回按钮 -->
-      <div class="post-detail__back">
+      <!-- 顶部操作栏 -->
+      <div class="post-detail__actions">
         <HandButton variant="ghost" size="sm" @click="goBack">
           ← 返回
         </HandButton>
+        <HandShare />
       </div>
 
       <!-- 文章头部 -->
@@ -75,23 +76,36 @@
           📍 {{ post.location }}
         </div>
       </HandCard>
+
+      <!-- 页脚 -->
+      <HandFooter />
     </div>
 
     <!-- 加载状态 -->
-    <div v-else class="post-detail__loading">
-      <p>正在加载...</p>
-    </div>
+    <HandLoading v-else-if="loading" text="正在加载文章..." fullscreen />
+
+    <!-- 错误状态 -->
+    <HandError
+      v-else
+      title="加载失败"
+      message="无法加载文章内容，请稍后再试"
+      @retry="loadPost"
+    />
   </PaperTexture>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { postApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
+import HandShare from '@/components/base/HandShare.vue'
+import HandFooter from '@/components/common/HandFooter.vue'
+import HandLoading from '@/components/common/HandLoading.vue'
+import HandError from '@/components/common/HandError.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
-import Pin from '@/components/decorative/Pin.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, BlogMedia } from '@/types'
 
@@ -99,6 +113,8 @@ const route = useRoute()
 const router = useRouter()
 
 const post = ref<BlogPost | null>(null)
+const loading = ref(true)
+const error = ref(false)
 
 // 计算属性：将文章内容和图片交错排列
 const articleBlocks = computed(() => {
@@ -142,10 +158,29 @@ const articleBlocks = computed(() => {
   return blocks
 })
 
-onMounted(() => {
+async function loadPost() {
   const postId = Number(route.params.id)
-  // 使用 mock 数据
-  post.value = mockPosts.find(p => p.postId === postId) || mockPosts[0] || null
+  loading.value = true
+  error.value = false
+
+  try {
+    // 尝试调用后端 API
+    const response = await postApi.getPost(postId)
+    post.value = response
+  } catch (err) {
+    // 如果 API 调用失败，使用 Mock 数据
+    console.warn('API call failed, using mock data')
+    post.value = mockPosts.find(p => p.postId === postId) || mockPosts[0] || null
+    if (!post.value) {
+      error.value = true
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadPost()
 })
 
 function goBack() {
@@ -219,7 +254,10 @@ function getFrameStyle(media: BlogMedia, index: number): FrameStyle {
   margin: 0 auto;
   padding: 40px 20px;
 
-  &__back {
+  &__actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
   }
 
@@ -305,15 +343,6 @@ function getFrameStyle(media: BlogMedia, index: number): FrameStyle {
   &__location {
     margin-top: 16px;
     font-size: 0.9rem;
-    color: var(--color-ink-light);
-  }
-
-  &__loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 60vh;
-    font-family: var(--font-body);
     color: var(--color-ink-light);
   }
 }
