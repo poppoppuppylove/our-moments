@@ -12,6 +12,7 @@
         <result property="mood" column="mood"/>
         <result property="location" column="location"/>
         <result property="status" column="status"/>
+        <result property="visibility" column="visibility"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
 
@@ -40,9 +41,13 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findAll" resultMap="BlogPostResultMap">
+        SELECT * FROM blog_post ORDER BY create_time DESC
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="postId">
-        INSERT INTO blog_post (user_id, category_id, title, content, weather, mood, location, status, create_time, update_time)
-        VALUES (#{userId}, #{categoryId}, #{title}, #{content}, #{weather}, #{mood}, #{location}, #{status}, NOW(), NOW())
+        INSERT INTO blog_post (user_id, category_id, title, content, weather, mood, location, status, visibility, create_time, update_time)
+        VALUES (#{userId}, #{categoryId}, #{title}, #{content}, #{weather}, #{mood}, #{location}, #{status}, #{visibility, jdbcType=VARCHAR}, NOW(), NOW())
     </insert>
 
     <update id="update">
@@ -55,6 +60,7 @@
             <if test="mood != null">mood = #{mood},</if>
             <if test="location != null">location = #{location},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="visibility != null">visibility = #{visibility},</if>
             update_time = NOW()
         </set>
         WHERE post_id = #{postId}

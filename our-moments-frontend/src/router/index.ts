@@ -16,6 +16,30 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/post/PostDetail.vue'),
     meta: { title: '文章详情 - Our Moments' }
   },
+  {
+    path: '/post/new',
+    name: 'PostNew',
+    component: () => import('@/views/post/PostNew.vue'),
+    meta: { title: '记录新时刻 - Our Moments', requiresAuth: true }
+  },
+  {
+    path: '/post/:id/edit',
+    name: 'PostUserEdit',
+    component: () => import('@/views/post/PostNew.vue'),
+    meta: { title: '编辑时刻 - Our Moments', requiresAuth: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/auth/RegisterPage.vue'),
+    meta: { title: '注册 - Our Moments' }
+  },
+  {
+    path: '/profile',
+    name: 'ProfileEdit',
+    component: () => import('@/views/auth/ProfileEdit.vue'),
+    meta: { title: '个人资料 - Our Moments', requiresAuth: true }
+  },
 
   // ========== 后台管理端 ==========
   {
@@ -90,7 +114,7 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth) {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) {
-      next({ name: 'AdminLogin', query: { redirect: to.fullPath } })
+      next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
   }

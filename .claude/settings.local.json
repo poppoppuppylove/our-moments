@@ -15,7 +15,16 @@
       "Bash(mv:*)",
       "Bash(dir:*)",
       "Bash(npm run dev)",
-      "Bash(npm run)"
+      "Bash(npm run)",
+      "Bash(./mvnw spring-boot:run:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 49484 /F\")",
+      "Bash(del:*)",
+      "Bash(mysql:*)",
+      "Bash(cmd:*)"
     ]
   }
 }

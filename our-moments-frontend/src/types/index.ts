@@ -53,6 +53,7 @@ export interface BlogPost {
   mood: string
   location: string
   status: number
+  visibility: string // PUBLIC, FRIENDS, PRIVATE
   createTime: string
   updateTime: string
   mediaList: BlogMedia[]
@@ -97,6 +98,19 @@ export interface PaginatedResponse<T> {
 
 // 文件上传响应
 export interface UploadResponse {
+  success: boolean
   url: string
-  filename: string
+  message: string
+}
+
+// 评论类型
+export interface Comment {
+  commentId: number
+  postId: number
+  userId: number
+  content: string
+  position: number // 评论在文章中的位置
+  createTime: string
+  updateTime: string
+  author: User
 }

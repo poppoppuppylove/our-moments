@@ -14,6 +14,9 @@ public interface BlogPostMapper {
                             @Param("categoryId") Long categoryId,
                             @Param("status") Integer status);
 
+    // Get all posts
+    List<BlogPost> findAll();
+
     int insert(BlogPost post);
     int update(BlogPost post);
     int deleteById(Long postId);

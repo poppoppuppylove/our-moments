@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gravity.ourmoments.mapper.FriendshipMapper">
+
+    <resultMap id="FriendshipResultMap" type="com.gravity.ourmoments.entity.Friendship">
+        <id property="friendshipId" column="friendship_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="friendId" column="friend_id"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="findById" resultMap="FriendshipResultMap">
+        SELECT * FROM sys_friendship WHERE friendship_id = #{friendshipId}
+    </select>
+
+    <select id="findByUserId" resultMap="FriendshipResultMap">
+        SELECT * FROM sys_friendship WHERE user_id = #{userId} OR friend_id = #{userId}
+    </select>
+
+    <select id="findByUserIdAndStatus" resultMap="FriendshipResultMap">
+        SELECT * FROM sys_friendship
+        WHERE (user_id = #{userId} OR friend_id = #{userId})
+        AND status = #{status}
+    </select>
+
+    <select id="findByUserAndFriend" resultMap="FriendshipResultMap">
+        SELECT * FROM sys_friendship
+        WHERE (user_id = #{userId} AND friend_id = #{friendId})
+        OR (user_id = #{friendId} AND friend_id = #{userId})
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="friendshipId">
+        INSERT INTO sys_friendship (user_id, friend_id, status, create_time, update_time)
+        VALUES (#{userId}, #{friendId}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE sys_friendship
+        <set>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE friendship_id = #{friendshipId}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_friendship WHERE friendship_id = #{friendshipId}
+    </delete>
+
+    <delete id="deleteByUserAndFriend">
+        DELETE FROM sys_friendship
+        WHERE (user_id = #{userId} AND friend_id = #{friendId})
+        OR (user_id = #{friendId} AND friend_id = #{userId})
+    </delete>
+
+</mapper>

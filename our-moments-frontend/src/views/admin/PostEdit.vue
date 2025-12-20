@@ -153,9 +153,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { BlogMedia } from '@/types'
+import type { BlogMedia, UploadResponse } from '@/types'
 import { mockPosts } from '@/utils/mock'
-import { postApi } from '@/api'
+import { postApi, fileApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
@@ -229,26 +229,34 @@ function handleFileSelect(e: Event) {
       return
     }
 
-    // 创建本地预览 (后续对接 OSS 时替换为上传逻辑)
-    const reader = new FileReader()
-    reader.onload = () => {
-      const mediaItem: BlogMedia = {
-        mediaId: Date.now() + Math.random(),
-        postId: 0,
-        mediaUrl: reader.result as string,
-        mediaType: 'image',
-        rotation: Math.floor(Math.random() * 6) - 3,
-        scale: 1,
-        positionX: 0,
-        positionY: 0,
-        filterStyle: '',
-        sortOrder: form.mediaList.length,
-        createTime: new Date().toISOString(),
-        zindex: form.mediaList.length
-      }
-      form.mediaList.push(mediaItem)
+    // Show upload progress
+    const progressCallback = (percent: number) => {
+      console.log(`Upload progress: ${percent}%`)
     }
-    reader.readAsDataURL(file)
+
+    // Upload file to server
+    fileApi.upload(file, progressCallback)
+      .then((response: UploadResponse) => {
+        const mediaItem: BlogMedia = {
+          mediaId: Date.now() + Math.random(),
+          postId: 0,
+          mediaUrl: response.url,
+          mediaType: 'image',
+          rotation: Math.floor(Math.random() * 6) - 3,
+          scale: 1,
+          positionX: 0,
+          positionY: 0,
+          filterStyle: '',
+          sortOrder: form.mediaList.length,
+          createTime: new Date().toISOString(),
+          zindex: form.mediaList.length
+        }
+        form.mediaList.push(mediaItem)
+      })
+      .catch((error) => {
+        console.error('Upload failed:', error)
+        alert(`图片 "${file.name}" 上传失败`)
+      })
   })
 
   input.value = ''
@@ -299,7 +307,11 @@ async function savePost(status: number) {
     location: form.location,
     status,
     mediaList: form.mediaList,
-    tagList: form.tags.map(name => ({ name }))
+    tagList: form.tags.map((name, index) => ({
+      tagId: index + 1,
+      name: name,
+      createTime: new Date().toISOString()
+    }))
   }
 
   try {

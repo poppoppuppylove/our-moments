@@ -31,14 +31,14 @@
           <div v-else-if="block.type === 'image'" class="post-detail__inline-image">
             <div
               class="gallery-item gallery-item--inline"
-              :style="getMediaStyle(block.media, index)"
+              :style="getMediaStyle(block.media!, index)"
             >
-              <div :class="['gallery-item__frame', `frame--${getFrameStyle(block.media, index)}`]">
-                <img :src="block.media.mediaUrl" :alt="`图片 ${index + 1}`" />
+              <div :class="['gallery-item__frame', `frame--${getFrameStyle(block.media!, index)}`]">
+                <img :src="block.media!.mediaUrl" :alt="`图片 ${index + 1}`" />
 
                 <!-- 装饰性 SVG：仅在特定样式下显示 -->
                 <!-- 爪印 SVG -->
-                <svg v-if="getFrameStyle(block.media, index) === 'paw'" class="frame-overlay frame-overlay--paw" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg v-if="getFrameStyle(block.media!, index) === 'paw'" class="frame-overlay frame-overlay--paw" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M32 44c-8 0-14 6-14 10 0 4 6 6 14 6s14-2 14-6c0-4-6-10-14-10z" fill="#D4C4A8" opacity="0.6"/>
                   <circle cx="18" cy="18" r="6" fill="#D4C4A8" opacity="0.6"/>
                   <circle cx="30" cy="10" r="6" fill="#D4C4A8" opacity="0.6"/>
@@ -46,7 +46,7 @@
                 </svg>
 
                 <!-- 三叶草 SVG -->
-                <svg v-if="getFrameStyle(block.media, index) === 'clover'" class="frame-overlay frame-overlay--clover" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <svg v-if="getFrameStyle(block.media!, index) === 'clover'" class="frame-overlay frame-overlay--clover" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <g fill="none" stroke="#8CBF65" stroke-width="2">
                     <circle cx="30" cy="30" r="18" fill="rgba(140, 191, 101, 0.1)"/>
                     <circle cx="70" cy="30" r="18" fill="rgba(140, 191, 101, 0.1)"/>
@@ -77,6 +77,9 @@
         </div>
       </HandCard>
 
+      <!-- 评论区域 -->
+      <PostComments :post-id="post.postId" />
+
       <!-- 页脚 -->
       <HandFooter />
     </div>
@@ -106,6 +109,7 @@ import HandLoading from '@/components/common/HandLoading.vue'
 import HandError from '@/components/common/HandError.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
+import PostComments from '@/components/PostComments.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, BlogMedia } from '@/types'
 
@@ -144,14 +148,20 @@ const articleBlocks = computed(() => {
 
     // 在适当的位置插入图片
     if ((index + 1) % interval === 0 && mediaIndex < mediaCount) {
-      blocks.push({ type: 'image' as const, media: mediaList[mediaIndex] })
+      const media = mediaList[mediaIndex]
+      if (media) {
+        blocks.push({ type: 'image' as const, media: media })
+      }
       mediaIndex++
     }
   })
 
   // 如果还有剩余的图片，添加到末尾
   while (mediaIndex < mediaCount) {
-    blocks.push({ type: 'image' as const, media: mediaList[mediaIndex] })
+    const media = mediaList[mediaIndex]
+    if (media) {
+      blocks.push({ type: 'image' as const, media: media })
+    }
     mediaIndex++
   }
 
@@ -195,9 +205,6 @@ function formatDate(dateString: string): string {
   return `${year}年${month}月${day}日`
 }
 
-function formatContent(content: string): string {
-  return content.replace(/\n/g, '<br>')
-}
 
 function formatParagraph(content: string): string {
   // 保持段落原样，不添加额外的换行
@@ -219,10 +226,6 @@ function getTapeColor(index: number): 'yellow' | 'pink' | 'blue' | 'green' | 'pu
   return colors[index % colors.length]!
 }
 
-function getPinColor(index: number): 'red' | 'blue' | 'green' | 'yellow' | 'purple' {
-  const colors: Array<'red' | 'blue' | 'green' | 'yellow' | 'purple'> = ['red', 'blue', 'green', 'yellow', 'purple']
-  return colors[index % colors.length]!
-}
 
 // 相框样式逻辑
 const frameStyles = ['polaroid', 'paw', 'clover'] as const

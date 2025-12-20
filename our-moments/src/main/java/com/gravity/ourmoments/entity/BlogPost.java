@@ -15,6 +15,7 @@ public class BlogPost {
     private String mood;
     private String location;
     private Integer status; // 0:Draft, 1:Published
+    private String visibility; // PUBLIC, FRIENDS, PRIVATE
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
