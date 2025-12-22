@@ -120,7 +120,7 @@ import HandFooter from '@/components/common/HandFooter.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
 import HandError from '@/components/common/HandError.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
-import Tape from '@/components/decorative/Tape.vue'
+// import Tape from '@/components/decorative/Tape.vue'
 import PostComments from '@/components/PostComments.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, BlogMedia } from '@/types'
@@ -245,7 +245,10 @@ function formatDate(dateString: string): string {
   const year = date.getFullYear()
   const month = date.getMonth() + 1
   const day = date.getDate()
-  return `${year}年${month}月${day}日`
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2,'0')
+  return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`
 }
 
 

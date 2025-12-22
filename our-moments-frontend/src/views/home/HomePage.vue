@@ -11,10 +11,10 @@
           <!-- 筛选按钮 -->
           <div class="navbar__filter">
             <HandButton
-              variant="ghost"
-              size="sm"
-              @click="toggleFilter"
-              :class="{ 'filter-active': hasActiveFilter }"
+                variant="ghost"
+                size="sm"
+                @click="toggleFilter"
+                :class="{ 'filter-active': hasActiveFilter }"
             >
               筛选
               <span v-if="hasActiveFilter" class="filter-badge"></span>
@@ -29,19 +29,19 @@
               更换背景
             </HandButton>
             <HandButton
-              v-if="ui.backgroundImage"
-              variant="ghost"
-              size="sm"
-              @click="clearBg"
+                v-if="ui.backgroundImage"
+                variant="ghost"
+                size="sm"
+                @click="clearBg"
             >
               恢复默认
             </HandButton>
             <input
-              ref="bgInput"
-              type="file"
-              accept="image/*"
-              class="hidden-input"
-              @change="onBgFileChange"
+                ref="bgInput"
+                type="file"
+                accept="image/*"
+                class="hidden-input"
+                @change="onBgFileChange"
             />
           </div>
 
@@ -85,18 +85,18 @@
             <span class="filter-label">标签</span>
             <div class="tag-list">
               <span
-                class="filter-tag"
-                :class="{ 'filter-tag--active': selectedTag === null }"
-                @click="selectTag(null)"
+                  class="filter-tag"
+                  :class="{ 'filter-tag--active': selectedTag === null }"
+                  @click="selectTag(null)"
               >
                 全部
               </span>
               <span
-                v-for="tag in allTags"
-                :key="tag.tagId"
-                class="filter-tag"
-                :class="{ 'filter-tag--active': selectedTag === tag.tagId }"
-                @click="selectTag(tag.tagId)"
+                  v-for="tag in allTags"
+                  :key="tag.tagId"
+                  class="filter-tag"
+                  :class="{ 'filter-tag--active': selectedTag === tag.tagId }"
+                  @click="selectTag(tag.tagId)"
               >
                 #{{ tag.name }}
               </span>
@@ -108,18 +108,18 @@
             <span class="filter-label">心情</span>
             <div class="tag-list">
               <span
-                class="filter-tag"
-                :class="{ 'filter-tag--active': selectedMood === null }"
-                @click="selectMood(null)"
+                  class="filter-tag"
+                  :class="{ 'filter-tag--active': selectedMood === null }"
+                  @click="selectMood(null)"
               >
                 全部
               </span>
               <span
-                v-for="mood in allMoods"
-                :key="mood"
-                class="filter-tag"
-                :class="{ 'filter-tag--active': selectedMood === mood }"
-                @click="selectMood(mood)"
+                  v-for="mood in allMoods"
+                  :key="mood"
+                  class="filter-tag"
+                  :class="{ 'filter-tag--active': selectedMood === mood }"
+                  @click="selectMood(mood)"
               >
                 {{ mood }}
               </span>
@@ -131,17 +131,17 @@
             <span class="filter-label">日期范围</span>
             <div class="date-row">
               <input
-                type="date"
-                v-model="dateFrom"
-                class="date-input"
-                @change="applyFilters"
+                  type="date"
+                  v-model="dateFrom"
+                  class="date-input"
+                  @change="applyFilters"
               />
               <span class="date-separator">至</span>
               <input
-                type="date"
-                v-model="dateTo"
-                class="date-input"
-                @change="applyFilters"
+                  type="date"
+                  v-model="dateTo"
+                  class="date-input"
+                  @change="applyFilters"
               />
             </div>
           </div>
@@ -158,11 +158,11 @@
 
         <!-- 发布按钮 -->
         <HandButton
-          v-if="userStore.isLoggedIn"
-          variant="primary"
-          size="lg"
-          @click="goToNewPost"
-          class="home-page__new-post-btn"
+            v-if="userStore.isLoggedIn"
+            variant="primary"
+            size="lg"
+            @click="goToNewPost"
+            class="home-page__new-post-btn"
         >
           + 记录新时刻
         </HandButton>
@@ -195,15 +195,15 @@
 
         <div v-else class="posts-grid">
           <HandCard
-            v-for="post in filteredPosts"
-            :key="post.postId"
-            variant="polaroid"
-            hoverable
-            :rotated="true"
-            :rotation="getRandomRotation()"
-            class="post-card"
-            :class="{ 'post-card--no-image': !post.mediaList || post.mediaList.length === 0 }"
-            @click="goToPost(post.postId)"
+              v-for="post in filteredPosts"
+              :key="post.postId"
+              variant="polaroid"
+              hoverable
+              :rotated="true"
+              :rotation="getRandomRotation()"
+              class="post-card"
+              :class="{ 'post-card--no-image': !post.mediaList || post.mediaList.length === 0 }"
+              @click="goToPost(post.postId)"
           >
             <!-- 文章图片 -->
             <div v-if="post.mediaList && post.mediaList.length > 0" class="post-card__image">
@@ -213,7 +213,7 @@
 
             <!-- 无图片占位区域 -->
             <div v-else class="post-card__no-image">
-              <span class="post-card__no-image-icon">📝</span>
+              <span class="post-card__no-image-icon"></span>
             </div>
 
             <!-- 文章内容 -->
@@ -230,6 +230,11 @@
                 <span v-for="tag in post.tagList" :key="tag.tagId" class="post-card__tag">
                   #{{ tag.name }}
                 </span>
+              </div>
+
+              <div v-if="post.author" class="post-card__author-info">
+                <img :src="post.author.avatar" :alt="post.author.nickname" class="post-card__author-avatar" />
+                <span class="post-card__author-name">{{ post.author.nickname }}</span>
               </div>
             </div>
           </HandCard>
@@ -252,7 +257,7 @@ import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
 import HandFooter from '@/components/common/HandFooter.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
-import Tape from '@/components/decorative/Tape.vue'
+// import Tape from '@/components/decorative/Tape.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, Tag } from '@/types'
 import {toast} from "@/composables/useToast.ts";
@@ -286,7 +291,7 @@ const filteredPosts = computed(() => {
   // 标签筛选
   if (selectedTag.value !== null) {
     result = result.filter(post =>
-      post.tagList?.some(tag => tag.tagId === selectedTag.value)
+        post.tagList?.some(tag => tag.tagId === selectedTag.value)
     )
   }
 
@@ -433,11 +438,11 @@ function goToNewPost() {
 function getExcerpt(content: string, length: number = 80): string {
   // 移除 HTML 标签和图片标记
   let text = content
-    .replace(/<img[^>]*>/gi, '') // 移除 img 标签
-    .replace(/<img-src="[^"]*"\/>/gi, '') // 移除自定义图片标记
-    .replace(/<[^>]+>/g, '') // 移除其他 HTML 标签
-    .replace(/&nbsp;/g, ' ') // 替换 &nbsp;
-    .trim()
+      .replace(/<img[^>]*>/gi, '') // 移除 img 标签
+      .replace(/<img-src="[^"]*"\/>/gi, '') // 移除自定义图片标记
+      .replace(/<[^>]+>/g, '') // 移除其他 HTML 标签
+      .replace(/&nbsp;/g, ' ') // 替换 &nbsp;
+      .trim()
 
   if (text.length <= length) return text
   return text.slice(0, length) + '...'
@@ -445,9 +450,12 @@ function getExcerpt(content: string, length: number = 80): string {
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
+  const year = date.getFullYear()
   const month = date.getMonth() + 1
   const day = date.getDate()
-  return `${month}月${day}日`
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  return `${year}年${month}月${day}日 ${hours}:${minutes}`
 }
 
 function getRandomTapeColor(): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
@@ -623,6 +631,28 @@ function getRandomRotation(): number {
     font-style: italic;
   }
 
+  &__author-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  &__author-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  &__author-name {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
   &__no-image {
     display: flex;
     justify-content: center;
@@ -630,10 +660,10 @@ function getRandomRotation(): number {
     margin: -20px -20px 16px -20px;
     height: 200px;
     background: linear-gradient(
-      135deg,
-      var(--color-paper-dark) 0%,
-      var(--color-paper) 50%,
-      rgba(210, 145, 188, 0.08) 100%
+            135deg,
+            var(--color-paper-dark) 0%,
+            var(--color-paper) 50%,
+            rgba(210, 145, 188, 0.08) 100%
     );
     border-radius: 15px 255px 0 0 / 255px 15px 0 0;
     position: relative;

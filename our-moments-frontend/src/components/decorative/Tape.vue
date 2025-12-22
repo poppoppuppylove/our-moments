@@ -1,7 +1,7 @@
 <template>
   <div
-    :class="['tape', `tape--${variant}`, `tape--${position}`]"
-    :style="tapeStyle"
+      :class="['tape', `tape--${variant}`, `tape--${position}`]"
+      :style="tapeStyle"
   ></div>
 </template>
 
@@ -71,11 +71,11 @@ function getBaseRotation(): number {
     right: 0;
     bottom: 0;
     background: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 2px,
-      rgba(255, 255, 255, 0.1) 2px,
-      rgba(255, 255, 255, 0.1) 4px
+            90deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 255, 255, 0.1) 2px,
+            rgba(255, 255, 255, 0.1) 4px
     );
   }
 
@@ -92,8 +92,12 @@ function getBaseRotation(): number {
   }
 
   &--top-right {
-    top: -8px;
-    right: -10px;
+    // 右上角对角线粘贴，3/4在卡片内，1/4在卡片外（上下各一半）
+    // 计算：距离右上角向左向上各偏移25px，使胶带中心在右上角
+    top: 0;
+    right: 0;
+    transform-origin: top right;
+    transform: translate(50%, -50%) rotate(45deg); // 先移动再旋转
   }
 
   &--bottom-left {

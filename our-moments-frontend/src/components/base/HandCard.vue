@@ -1,13 +1,13 @@
 <template>
   <div
-    :class="[
+      :class="[
       'hand-card',
       `hand-card--${variant}`,
       { 'hand-card--hoverable': hoverable, 'hand-card--rotated': rotated }
     ]"
-    :style="cardStyle"
-    @mouseenter="onMouseEnter"
-    @mouseleave="onMouseLeave"
+      :style="cardStyle"
+      @mouseenter="onMouseEnter"
+      @mouseleave="onMouseLeave"
   >
     <div v-if="$slots.header" class="hand-card__header">
       <slot name="header"></slot>
@@ -90,8 +90,8 @@ function onMouseLeave() {
     background-color: var(--color-paper);
     border-radius: 2px;
     box-shadow:
-      2px 2px 5px rgba(0, 0, 0, 0.05),
-      inset 0 0 40px rgba(0, 0, 0, 0.03);
+        2px 2px 5px rgba(0, 0, 0, 0.05),
+        inset 0 0 40px rgba(0, 0, 0, 0.03);
     padding: 24px;
     border: none;
 
@@ -133,8 +133,8 @@ function onMouseLeave() {
     background: linear-gradient(to bottom, #ffffa5 0%, #fff9c4 100%);
     padding: 20px;
     box-shadow:
-      2px 2px 8px rgba(0, 0, 0, 0.1),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+        2px 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.05);
     border-radius: 0 0 0 30px / 0 0 0 30px;
 
     // 便签线条
@@ -187,9 +187,9 @@ function onMouseLeave() {
     width: 80px;
     height: 24px;
     background: linear-gradient(
-      135deg,
-      rgba(255, 235, 205, 0.8) 0%,
-      rgba(255, 228, 181, 0.6) 100%
+            135deg,
+            rgba(255, 235, 205, 0.8) 0%,
+            rgba(255, 228, 181, 0.6) 100%
     );
     z-index: 10;
 
