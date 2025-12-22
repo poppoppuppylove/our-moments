@@ -36,6 +36,7 @@ export const categoryApi = {
 
 // 标签相关 API
 export const tagApi = {
+  getTags: () => get<Tag[]>('/tags'),
   getAllTags: () => get<Tag[]>('/tags'),
   getTag: (id: number) => get<Tag>(`/tags/${id}`),
   createTag: (data: Tag) => post<Tag>('/tags', data),

@@ -100,6 +100,29 @@
             </div>
           </div>
 
+          <!-- 心情筛选 -->
+          <div class="filter-panel__section">
+            <span class="filter-label">心情</span>
+            <div class="tag-list">
+              <span
+                class="filter-tag"
+                :class="{ 'filter-tag--active': selectedMood === null }"
+                @click="selectMood(null)"
+              >
+                全部
+              </span>
+              <span
+                v-for="mood in allMoods"
+                :key="mood"
+                class="filter-tag"
+                :class="{ 'filter-tag--active': selectedMood === mood }"
+                @click="selectMood(mood)"
+              >
+                {{ mood }}
+              </span>
+            </div>
+          </div>
+
           <!-- 日期筛选 -->
           <div class="filter-panel__section">
             <span class="filter-label">日期范围</span>
@@ -149,6 +172,10 @@
           #{{ getTagName(selectedTag) }}
           <button @click="selectTag(null)">×</button>
         </span>
+        <span v-if="selectedMood !== null" class="active-filter-tag">
+          心情: {{ selectedMood }}
+          <button @click="selectMood(null)">×</button>
+        </span>
         <span v-if="dateFrom || dateTo" class="active-filter-tag">
           {{ dateFrom || '...' }} 至 {{ dateTo || '...' }}
           <button @click="clearDateFilter">×</button>
@@ -172,12 +199,18 @@
             :rotated="true"
             :rotation="getRandomRotation()"
             class="post-card"
+            :class="{ 'post-card--no-image': !post.mediaList || post.mediaList.length === 0 }"
             @click="goToPost(post.postId)"
           >
             <!-- 文章图片 -->
-            <div v-if="post.mediaList.length" class="post-card__image">
+            <div v-if="post.mediaList && post.mediaList.length > 0" class="post-card__image">
               <img :src="post.mediaList[0]?.mediaUrl" :alt="post.title" />
               <Tape v-if="Math.random() > 0.5" :variant="getRandomTapeColor()" position="top-right" />
+            </div>
+
+            <!-- 无图片占位区域 -->
+            <div v-else class="post-card__no-image">
+              <span class="post-card__no-image-icon">📝</span>
             </div>
 
             <!-- 文章内容 -->
@@ -227,15 +260,19 @@ const allPosts = ref<BlogPost[]>([])
 const allTags = ref<Tag[]>([])
 const bgInput = ref<HTMLInputElement | null>(null)
 
+// 所有可能的心情选项
+const allMoods = ['开心', '平静', '惬意', '感动', '期待', '思念']
+
 // 筛选状态
 const selectedTag = ref<number | null>(null)
+const selectedMood = ref<string | null>(null)
 const dateFrom = ref<string>('')
 const dateTo = ref<string>('')
 const showFilter = ref(false)
 
 // 是否有激活的筛选条件
 const hasActiveFilter = computed(() => {
-  return selectedTag.value !== null || dateFrom.value !== '' || dateTo.value !== ''
+  return selectedTag.value !== null || selectedMood.value !== null || dateFrom.value !== '' || dateTo.value !== ''
 })
 
 // 计算过滤后的帖子
@@ -247,6 +284,11 @@ const filteredPosts = computed(() => {
     result = result.filter(post =>
       post.tagList?.some(tag => tag.tagId === selectedTag.value)
     )
+  }
+
+  // 心情筛选
+  if (selectedMood.value !== null) {
+    result = result.filter(post => post.mood === selectedMood.value)
   }
 
   // 日期筛选
@@ -375,8 +417,16 @@ function goToNewPost() {
 }
 
 function getExcerpt(content: string, length: number = 80): string {
-  if (content.length <= length) return content
-  return content.slice(0, length) + '...'
+  // 移除 HTML 标签和图片标记
+  let text = content
+    .replace(/<img[^>]*>/gi, '') // 移除 img 标签
+    .replace(/<img-src="[^"]*"\/>/gi, '') // 移除自定义图片标记
+    .replace(/<[^>]+>/g, '') // 移除其他 HTML 标签
+    .replace(/&nbsp;/g, ' ') // 替换 &nbsp;
+    .trim()
+
+  if (text.length <= length) return text
+  return text.slice(0, length) + '...'
 }
 
 function formatDate(dateString: string): string {
@@ -490,6 +540,9 @@ function getRandomRotation(): number {
 .post-card {
   cursor: pointer;
   background: white;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
 
   &__image {
     position: relative;
@@ -506,6 +559,9 @@ function getRandomRotation(): number {
 
   &__body {
     padding: 0 4px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   &__title {
@@ -522,6 +578,7 @@ function getRandomRotation(): number {
     color: var(--color-ink-light);
     line-height: 1.6;
     margin-bottom: 16px;
+    flex: 1;
   }
 
   &__meta {
@@ -550,6 +607,53 @@ function getRandomRotation(): number {
     font-size: 0.8rem;
     color: var(--color-soft-purple);
     font-style: italic;
+  }
+
+  &__no-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: -20px -20px 16px -20px;
+    height: 200px;
+    background: linear-gradient(
+      135deg,
+      var(--color-paper-dark) 0%,
+      var(--color-paper) 50%,
+      rgba(210, 145, 188, 0.08) 100%
+    );
+    border-radius: 15px 255px 0 0 / 255px 15px 0 0;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+  }
+
+  &__no-image-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    color: var(--color-soft-purple);
+  }
+
+  &--no-image {
+    .post-card__body {
+      padding-top: 8px;
+    }
+
+    .post-card__excerpt {
+      -webkit-line-clamp: 4;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   }
 }
 

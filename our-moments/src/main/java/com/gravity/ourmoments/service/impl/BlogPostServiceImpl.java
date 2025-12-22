@@ -7,6 +7,7 @@ import com.gravity.ourmoments.mapper.BlogMediaMapper;
 import com.gravity.ourmoments.mapper.BlogPostMapper;
 import com.gravity.ourmoments.service.BlogPostService;
 import com.gravity.ourmoments.service.FriendshipService;
+import com.gravity.ourmoments.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,9 @@ public class BlogPostServiceImpl implements BlogPostService {
 
     @Autowired
     private FriendshipService friendshipService;
+
+    @Autowired
+    private TagService tagService;
 
     @Override
     public BlogPost getPostById(Long postId) {
@@ -55,6 +59,7 @@ public class BlogPostServiceImpl implements BlogPostService {
                 blogPostMapper.addTagToPost(post.getPostId(), tag.getTagId());
             }
         }
+
 
         return getPostById(post.getPostId());
     }

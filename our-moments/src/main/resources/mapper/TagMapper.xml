@@ -12,6 +12,10 @@
         SELECT * FROM sys_tag WHERE tag_id = #{tagId}
     </select>
 
+    <select id="findByName" resultMap="TagResultMap">
+        SELECT * FROM sys_tag WHERE name = #{name} LIMIT 1
+    </select>
+
     <select id="findAll" resultMap="TagResultMap">
         SELECT * FROM sys_tag ORDER BY create_time DESC
     </select>

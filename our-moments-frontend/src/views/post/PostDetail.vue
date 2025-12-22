@@ -6,7 +6,18 @@
         <HandButton variant="ghost" size="sm" @click="goBack">
           ← 返回
         </HandButton>
-        <HandShare />
+        <div class="post-detail__action-right">
+          <!-- 作者操作按钮 -->
+          <template v-if="isAuthor">
+            <HandButton variant="outline" size="sm" @click="editPost">
+              编辑
+            </HandButton>
+            <HandButton variant="ghost" size="sm" class="delete-btn" @click="confirmDelete">
+              删除
+            </HandButton>
+          </template>
+          <HandShare />
+        </div>
       </div>
 
       <!-- 文章头部 -->
@@ -100,6 +111,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/store/user'
 import { postApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
@@ -115,10 +127,17 @@ import type { BlogPost, BlogMedia } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const post = ref<BlogPost | null>(null)
 const loading = ref(true)
 const error = ref(false)
+
+// 判断当前用户是否为作者
+const isAuthor = computed(() => {
+  if (!post.value || !userStore.user) return false
+  return post.value.userId === userStore.user.userId
+})
 
 // 计算属性：将文章内容和图片交错排列
 const articleBlocks = computed(() => {
@@ -197,6 +216,29 @@ function goBack() {
   router.back()
 }
 
+// 编辑帖子
+function editPost() {
+  if (post.value) {
+    router.push(`/post/${post.value.postId}/edit`)
+  }
+}
+
+// 确认删除
+async function confirmDelete() {
+  if (!post.value) return
+
+  if (confirm('确定要删除这篇文章吗？此操作不可撤销。')) {
+    try {
+      await postApi.deletePost(post.value.postId)
+      alert('文章已删除')
+      router.push('/')
+    } catch (err) {
+      console.error('删除文章失败:', err)
+      alert('删除失败，请稍后重试')
+    }
+  }
+}
+
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
   const year = date.getFullYear()
@@ -262,6 +304,20 @@ function getFrameStyle(media: BlogMedia, index: number): FrameStyle {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+  }
+
+  &__action-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .delete-btn {
+    color: #c44;
+
+    &:hover {
+      color: #a33;
+    }
   }
 
   &__header {

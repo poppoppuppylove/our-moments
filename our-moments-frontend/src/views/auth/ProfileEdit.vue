@@ -10,7 +10,13 @@
           <div class="profile-form__avatar-section">
             <div class="avatar-wrapper">
               <img :src="form.avatar" :alt="form.nickname" class="profile-avatar" />
+              <div v-if="uploadingAvatar" class="avatar-uploading">
+                <span class="uploading-spinner"></span>
+                <span>上传中...</span>
+              </div>
               <HandButton
+                v-else
+                type="button"
                 variant="outline"
                 size="sm"
                 @click="triggerAvatarUpload"
@@ -70,7 +76,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { userApi } from '@/api'
+import { userApi, fileApi } from '@/api'
 import HandCard from '@/components/base/HandCard.vue'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
@@ -81,6 +87,7 @@ import type { User } from '@/types'
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
+const uploadingAvatar = ref(false)
 const avatarInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
@@ -146,7 +153,7 @@ function triggerAvatarUpload() {
   avatarInput.value?.click()
 }
 
-function onAvatarFileChange(e: Event) {
+async function onAvatarFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input?.files?.[0]
   if (!file) return
@@ -157,14 +164,23 @@ function onAvatarFileChange(e: Event) {
     return
   }
 
-  // 模拟上传头像 - 在实际应用中这里应该调用文件上传API
-  const reader = new FileReader()
-  reader.onload = () => {
-    const dataUrl = reader.result as string
-    form.avatar = dataUrl
+  uploadingAvatar.value = true
+
+  try {
+    // 上传头像到 OSS
+    const response = await fileApi.uploadAvatar(file)
+    if (response.success && response.url) {
+      form.avatar = response.url
+    } else {
+      alert('头像上传失败')
+    }
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    alert('头像上传失败，请稍后重试')
+  } finally {
+    uploadingAvatar.value = false
     input.value = ''
   }
-  reader.readAsDataURL(file)
 }
 
 function goBack() {
@@ -238,6 +254,37 @@ function goBack() {
 
 .hidden-input {
   display: none;
+}
+
+.avatar-uploading {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(20%, 20%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  color: var(--color-soft-purple);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.uploading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-soft-purple);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {

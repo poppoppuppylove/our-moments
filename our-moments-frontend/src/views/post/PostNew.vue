@@ -40,6 +40,7 @@
               <div class="editor-toolbar">
                 <div class="toolbar-group">
                   <HandButton
+                    type="button"
                     variant="ghost"
                     size="sm"
                     title="添加图片"
@@ -48,6 +49,7 @@
                     📷
                   </HandButton>
                   <HandButton
+                    type="button"
                     variant="ghost"
                     size="sm"
                     title="段落换行"
