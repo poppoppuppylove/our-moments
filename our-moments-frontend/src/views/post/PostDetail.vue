@@ -29,8 +29,8 @@
             {{ post.author.nickname }}
           </span>
           <span class="post-detail__date">{{ formatDate(post.createTime) }}</span>
-          <span class="post-detail__weather">{{ post.weather }}</span>
-          <span class="post-detail__mood">{{ post.mood }}</span>
+          <span v-if="post.weather" class="post-detail__weather">{{ post.weather }}</span>
+          <span v-if="post.mood" class="post-detail__mood">{{ post.mood }}</span>
         </div>
       </header>
 
@@ -124,6 +124,7 @@ import Tape from '@/components/decorative/Tape.vue'
 import PostComments from '@/components/PostComments.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, BlogMedia } from '@/types'
+import {toast} from "@/composables/useToast.ts";
 
 const route = useRoute()
 const router = useRouter()
@@ -230,11 +231,11 @@ async function confirmDelete() {
   if (confirm('确定要删除这篇文章吗？此操作不可撤销。')) {
     try {
       await postApi.deletePost(post.value.postId)
-      alert('文章已删除')
+      toast.success('文章已删除')
       router.push('/')
     } catch (err) {
       console.error('删除文章失败:', err)
-      alert('删除失败，请稍后重试')
+      toast.error('删除失败，请稍后重试')
     }
   }
 }

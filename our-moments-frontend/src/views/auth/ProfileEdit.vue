@@ -76,6 +76,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { toast } from '@/composables/useToast'
 import { userApi, fileApi } from '@/api'
 import HandCard from '@/components/base/HandCard.vue'
 import HandButton from '@/components/base/HandButton.vue'
@@ -139,11 +140,11 @@ async function handleUpdateProfile() {
     // 更新用户存储中的信息
     userStore.setUser(updatedUser)
 
-    alert('个人资料更新成功!')
+    toast.success('个人资料更新成功!')
     router.push('/')
   } catch (error: any) {
     console.error('更新个人资料失败:', error)
-    alert('更新失败，请稍后重试')
+    toast.error('更新失败，请稍后重试')
   } finally {
     loading.value = false
   }
@@ -159,7 +160,7 @@ async function onAvatarFileChange(e: Event) {
   if (!file) return
 
   if (file.size > 5 * 1024 * 1024) {
-    alert('图片大小不能超过 5MB')
+    toast.error('图片大小不能超过 5MB')
     input.value = ''
     return
   }
@@ -172,11 +173,11 @@ async function onAvatarFileChange(e: Event) {
     if (response.success && response.url) {
       form.avatar = response.url
     } else {
-      alert('头像上传失败')
+      toast.error('头像上传失败')
     }
   } catch (error) {
     console.error('头像上传失败:', error)
-    alert('头像上传失败，请稍后重试')
+    toast.error('头像上传失败，请稍后重试')
   } finally {
     uploadingAvatar.value = false
     input.value = ''

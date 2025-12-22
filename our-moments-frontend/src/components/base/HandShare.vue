@@ -13,6 +13,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import HandButton from '@/components/base/HandButton.vue'
+import {toast} from "@/composables/useToast.ts";
 
 const showToast = ref(false)
 
@@ -43,7 +44,7 @@ async function handleShare() {
     }, 2000)
   } catch (err) {
     console.error('Failed to copy', err)
-    alert('复制链接失败，请手动复制浏览器地址')
+    toast.error('复制链接失败，请手动复制浏览器地址')
   }
 }
 </script>

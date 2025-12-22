@@ -53,10 +53,23 @@ public class BlogPostServiceImpl implements BlogPostService {
             }
         }
 
-        // 3. Insert Tags
+        // 3. Insert Tags (support creating new tags by name)
         if (post.getTagList() != null) {
             for (Tag tag : post.getTagList()) {
-                blogPostMapper.addTagToPost(post.getPostId(), tag.getTagId());
+                Tag managedTag;
+                if (tag.getTagId() != null && tag.getTagId() > 0) {
+                    // 使用现有 tagId
+                    managedTag = tagService.getTagById(tag.getTagId());
+                } else if (tag.getName() != null && !tag.getName().trim().isEmpty()) {
+                    // 通过标签名称获取或创建标签
+                    managedTag = tagService.getOrCreateTag(tag.getName().trim());
+                } else {
+                    continue; // Skip invalid tag
+                }
+
+                if (managedTag != null) {
+                    blogPostMapper.addTagToPost(post.getPostId(), managedTag.getTagId());
+                }
             }
         }
 
@@ -80,11 +93,24 @@ public class BlogPostServiceImpl implements BlogPostService {
             }
         }
 
-        // Handle Tag Update (Delete all and re-insert)
+        // Handle Tag Update (Delete all and re-insert, support creating new tags)
         if (post.getTagList() != null) {
             blogPostMapper.removeTagsFromPost(postId);
             for (Tag tag : post.getTagList()) {
-                blogPostMapper.addTagToPost(postId, tag.getTagId());
+                Tag managedTag;
+                if (tag.getTagId() != null && tag.getTagId() > 0) {
+                    // 使用现有 tagId
+                    managedTag = tagService.getTagById(tag.getTagId());
+                } else if (tag.getName() != null && !tag.getName().trim().isEmpty()) {
+                    // 通过标签名称获取或创建标签
+                    managedTag = tagService.getOrCreateTag(tag.getName().trim());
+                } else {
+                    continue; // Skip invalid tag
+                }
+
+                if (managedTag != null) {
+                    blogPostMapper.addTagToPost(postId, managedTag.getTagId());
+                }
             }
         }
 

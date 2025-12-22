@@ -49,6 +49,9 @@
 
           <template v-if="userStore.isLoggedIn">
             <span class="navbar__welcome">欢迎, {{ userStore.nickname }}!</span>
+            <HandButton variant="ghost" size="sm" @click="goToFriends">
+              好友
+            </HandButton>
             <HandButton variant="outline" size="sm" @click="goToProfile">
               个人资料
             </HandButton>
@@ -220,7 +223,7 @@
 
               <div class="post-card__meta">
                 <span class="post-card__date">{{ formatDate(post.createTime) }}</span>
-                <span class="post-card__mood">{{ post.mood }}</span>
+                <span v-if="post.mood" class="post-card__mood">{{ post.mood }}</span>
               </div>
 
               <div class="post-card__tags">
@@ -252,6 +255,7 @@ import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, Tag } from '@/types'
+import {toast} from "@/composables/useToast.ts";
 
 const router = useRouter()
 const ui = useUiStore()
@@ -317,6 +321,11 @@ function selectTag(tagId: number | null) {
   selectedTag.value = tagId
 }
 
+// 选择心情
+function selectMood(mood: string | null) {
+  selectedMood.value = mood
+}
+
 // 清除日期筛选
 function clearDateFilter() {
   dateFrom.value = ''
@@ -326,6 +335,7 @@ function clearDateFilter() {
 // 清除所有筛选
 function clearAllFilters() {
   selectedTag.value = null
+  selectedMood.value = null
   dateFrom.value = ''
   dateTo.value = ''
   showFilter.value = false
@@ -352,7 +362,7 @@ function onBgFileChange(e: Event) {
   if (!file) return
 
   if (file.size > 5 * 1024 * 1024) {
-    alert('图片大小不能超过 5MB')
+    toast.error('图片大小不能超过 5MB')
     input.value = ''
     return
   }
@@ -380,6 +390,10 @@ function goToRegister() {
 
 function goToProfile() {
   router.push('/profile')
+}
+
+function goToFriends() {
+  router.push('/friends')
 }
 
 function handleLogout() {

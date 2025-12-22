@@ -159,6 +159,7 @@ import { postApi, fileApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
+import {toast} from "@/composables/useToast.ts";
 
 const route = useRoute()
 const router = useRouter()
@@ -225,7 +226,7 @@ function handleFileSelect(e: Event) {
 
   Array.from(files).forEach(file => {
     if (file.size > 5 * 1024 * 1024) {
-      alert(`图片 "${file.name}" 超过 5MB 限制`)
+      toast.error(`图片 "${file.name}" 超过 5MB 限制`)
       return
     }
 
@@ -255,7 +256,7 @@ function handleFileSelect(e: Event) {
       })
       .catch((error) => {
         console.error('Upload failed:', error)
-        alert(`图片 "${file.name}" 上传失败`)
+        toast.error(`图片 "${file.name}" 上传失败`)
       })
   })
 
@@ -286,11 +287,11 @@ async function saveDraft() {
 
 async function publish() {
   if (!form.title.trim()) {
-    alert('请输入文章标题')
+    toast.error('请输入文章标题')
     return
   }
   if (!form.content.trim()) {
-    alert('请输入文章内容')
+    toast.error('请输入文章内容')
     return
   }
   await savePost(1)

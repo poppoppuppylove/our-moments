@@ -174,6 +174,7 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { toast } from '@/composables/useToast'
 import type { BlogMedia, UploadResponse } from '@/types'
 import { postApi, fileApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
@@ -220,14 +221,14 @@ async function loadPost() {
     const post = await postApi.getPost(postId)
     // 检查是否有权限编辑（必须是作者）
     if (post.userId !== userStore.user?.userId) {
-      alert('您没有权限编辑此文章')
+      toast.warning('您没有权限编辑此文章')
       router.push('/')
       return
     }
     populateForm(post)
   } catch (err) {
     console.error('Failed to load post:', err)
-    alert('加载文章失败')
+    toast.error('加载文章失败')
     router.push('/')
   } finally {
     loading.value = false
@@ -236,29 +237,33 @@ async function loadPost() {
 
 function populateForm(post: any) {
   form.title = post.title
+  form.content = post.content || ''
   form.weather = post.weather || ''
   form.mood = post.mood || ''
   form.location = post.location || ''
-  form.visibility = post.visibility || 'public'
+  form.visibility = post.visibility?.toLowerCase() || 'public'
   form.mediaList = post.mediaList || []
   form.tags = post.tagList?.map((t: any) => t.name) || []
 
   // 设置编辑器内容
   nextTick(() => {
     if (editorContent.value) {
-      editorContent.value.innerHTML = post.content || ''
-      // 重建图片映射
+      let content = post.content || ''
+
+      // 重建图片映射并替换图片标记
       if (post.mediaList) {
         post.mediaList.forEach((media: BlogMedia) => {
           const imgId = `img_${media.mediaId}`
           inlineImages.value.set(imgId, media)
           // 替换图片标记为实际的img标签
-          editorContent.value!.innerHTML = editorContent.value!.innerHTML.replace(
+          content = content.replace(
             `<img-src="${imgId}"/>`,
-            `<img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0;"/>`
+            `<img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/>`
           )
         })
       }
+
+      editorContent.value.innerHTML = content
     }
   })
 }
@@ -275,7 +280,7 @@ function handleImageUpload(e: Event) {
 
   const file = files[0]
   if (file.size > 5 * 1024 * 1024) {
-    alert(`图片 "${file.name}" 超过 5MB 限制`)
+    toast.error(`图片 "${file.name}" 超过 5MB 限制`)
     return
   }
 
@@ -305,7 +310,7 @@ function handleImageUpload(e: Event) {
     })
     .catch((error) => {
       console.error('Upload failed:', error)
-      alert(`图片 "${file.name}" 上传失败`)
+      toast.error(`图片 "${file.name}" 上传失败`)
     })
 
   input.value = ''
@@ -421,13 +426,21 @@ function removeTag(index: number) {
 // 发布
 async function publish() {
   if (!form.title.trim()) {
-    alert('请输入标题')
+    toast.error('请输入标题')
     return
   }
   if (!form.content.trim()) {
-    alert('请输入内容')
+    toast.error('请输入内容')
     return
   }
+
+  // 调试信息
+  console.log('发布前的数据:', {
+    title: form.title,
+    content: form.content,
+    tags: form.tags,
+    tagList: form.tags.map((name) => ({ name }))
+  })
 
   saving.value = true
 
@@ -437,14 +450,12 @@ async function publish() {
     weather: form.weather,
     mood: form.mood,
     location: form.location,
-    visibility: form.visibility,
+    visibility: form.visibility.toUpperCase(),
     status: 1, // 已发布
     userId: userStore.user?.userId,
     mediaList: form.mediaList,
-    tagList: form.tags.map((name, index) => ({
-      tagId: index + 1,
-      name: name,
-      createTime: new Date().toISOString()
+    tagList: form.tags.map((name) => ({
+      name: name
     }))
   }
 
@@ -454,10 +465,11 @@ async function publish() {
     } else {
       await postApi.createPost(postData)
     }
+    toast.success('发布成功！')
     router.push('/')
   } catch (err) {
     console.error('Failed to save post:', err)
-    alert('保存失败，请稍后重试')
+    toast.error('保存失败，请稍后重试')
   } finally {
     saving.value = false
   }

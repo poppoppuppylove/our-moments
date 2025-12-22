@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/ProfileEdit.vue'),
     meta: { title: '个人资料 - Our Moments', requiresAuth: true }
   },
+  {
+    path: '/friends',
+    name: 'Friends',
+    component: () => import('@/views/friends/FriendsPage.vue'),
+    meta: { title: '我的好友 - Our Moments', requiresAuth: true }
+  },
 
   // ========== 后台管理端 ==========
   {

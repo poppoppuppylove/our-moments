@@ -51,6 +51,17 @@ public class BlogPostController {
 
     @PostMapping
     public ResponseEntity<BlogPost> createPost(@RequestBody BlogPost post) {
+        // Debug logging
+        System.out.println("Received post creation request:");
+        System.out.println("Title: " + post.getTitle());
+        System.out.println("Content length: " + (post.getContent() != null ? post.getContent().length() : 0));
+        System.out.println("Tag list size: " + (post.getTagList() != null ? post.getTagList().size() : 0));
+        if (post.getTagList() != null) {
+            for (int i = 0; i < post.getTagList().size(); i++) {
+                System.out.println("Tag " + i + ": " + post.getTagList().get(i).getName());
+            }
+        }
+
         // Set default visibility to PUBLIC if not specified
         if (post.getVisibility() == null || post.getVisibility().isEmpty()) {
             post.setVisibility("PUBLIC");
@@ -62,6 +73,17 @@ public class BlogPostController {
 
     @PutMapping("/{id}")
     public ResponseEntity<BlogPost> updatePost(@PathVariable Long id, @RequestBody BlogPost post) {
+        // Debug logging
+        System.out.println("Received post update request for ID: " + id);
+        System.out.println("Title: " + post.getTitle());
+        System.out.println("Content length: " + (post.getContent() != null ? post.getContent().length() : 0));
+        System.out.println("Tag list size: " + (post.getTagList() != null ? post.getTagList().size() : 0));
+        if (post.getTagList() != null) {
+            for (int i = 0; i < post.getTagList().size(); i++) {
+                System.out.println("Tag " + i + ": " + post.getTagList().get(i).getName());
+            }
+        }
+
         // Verify the user owns the post before allowing update
         Long currentUserId = getCurrentUserId();
         BlogPost existingPost = blogPostService.getPostById(id);

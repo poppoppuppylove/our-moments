@@ -76,6 +76,7 @@ import { useUserStore } from '@/store/user'
 import { commentApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import type { Comment } from '@/types'
+import {toast} from "@/composables/useToast.ts";
 
 const props = defineProps<{
   postId: number
@@ -128,7 +129,7 @@ async function submitComment() {
     emit('comment-added')
   } catch (error) {
     console.error('Failed to submit comment:', error)
-    alert('评论提交失败，请稍后重试')
+    toast.error('评论提交失败，请稍后重试')
   } finally {
     submitting.value = false
   }
