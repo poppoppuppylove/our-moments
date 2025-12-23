@@ -791,19 +791,20 @@ function getStableRotation(postId: number): number {
     height: 100%;
     background: rgba(255, 255, 255, 0.98);
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-    padding: 80px 20px 40px;
+    padding: 80px;
+    margin-top: -30px;
     overflow-y: auto;
   }
 
   &__user {
-    padding: 16px 0;
-    margin-bottom: 16px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
     border-bottom: 1px dashed var(--color-ink-light);
   }
 
   &__welcome {
     font-family: var(--font-handwriting);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: var(--color-soft-purple);
   }
 
