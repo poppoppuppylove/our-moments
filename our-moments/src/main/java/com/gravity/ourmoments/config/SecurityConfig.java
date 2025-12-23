@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // 替换不安全的编码器
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -43,10 +44,12 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
+                // 新增：放行OPTIONS预检请求（解决跨域预检被拦截）
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 关键：放行所有OPTIONS请求
                         // Swagger UI endpoints
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        // Public Auth endpoints
+                        // Public Auth endpoints（登录接口属于/auth，已放行）
                         .requestMatchers("/api/auth/**").permitAll()
                         // Public Register endpoint (POST /api/users)
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
@@ -76,11 +79,11 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowCredentials(true); // 允许携带Cookie（登录必备）
+        configuration.setMaxAge(3600L); // 预检请求缓存1小时
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // 对所有接口生效
         return source;
     }
 
@@ -97,9 +100,17 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        // Warning: This is not secure for production. Use BCryptPasswordEncoder in real apps.
-        return NoOpPasswordEncoder.getInstance();
-    }
+//    @Bean
+//    public PasswordEncoder passwordEncoder() {
+//        // 关键修改2：替换不安全的NoOpPasswordEncoder为BCrypt（生产必备，开发也建议用）
+//        // 注意：若之前数据库密码是明文，需先加密后存入（如BCrypt.encode("123456")）
+//
+//        return new BCryptPasswordEncoder();
+//    }
+@Bean
+public PasswordEncoder passwordEncoder() {
+    // 必须改回这个！临时允许明文密码（仅开发用）
+    return NoOpPasswordEncoder.getInstance();
+    // 注释掉BCrypt：// return new BCryptPasswordEncoder();
+}
 }

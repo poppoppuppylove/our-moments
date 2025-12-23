@@ -9,63 +9,69 @@ const request: AxiosInstance = axios.create({
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true, // 关键1：开启跨域携带凭证（必须加！）
 })
 
 // 请求拦截器
 request.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const userStore = useUserStore()
+    (config: InternalAxiosRequestConfig) => {
+      const userStore = useUserStore()
 
-    // 添加 token 到请求头
-    if (userStore.token) {
-      config.headers.Authorization = `Bearer ${userStore.token}`
+      // 添加 token 到请求头
+      if (userStore.token) {
+        config.headers.Authorization = `Bearer ${userStore.token}`
+      }
+
+      // 兼容文件上传的 Content-Type（可选，防止覆盖）
+      if (config.headers['Content-Type'] !== 'multipart/form-data') {
+        config.headers['Content-Type'] = 'application/json'
+      }
+
+      return config
+    },
+    (error) => {
+      console.error('请求配置错误:', error)
+      return Promise.reject(error)
     }
-
-    return config
-  },
-  (error) => {
-    console.error('请求配置错误:', error)
-    return Promise.reject(error)
-  }
 )
 
 // 响应拦截器
 request.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response.data
-  },
-  (error) => {
-    const { response } = error
+    (response: AxiosResponse) => {
+      return response.data
+    },
+    (error) => {
+      const { response } = error
 
-    if (response) {
-      switch (response.status) {
-        case 401:
-          // 未授权，清除 token 并跳转登录页
-          const userStore = useUserStore()
-          userStore.logout()
-          router.push('/login')
-          break
-        case 403:
-          console.error('没有权限访问该资源')
-          break
-        case 404:
-          console.error('请求的资源不存在')
-          break
-        case 500:
-          console.error('服务器内部错误')
-          break
-        default:
-          console.error(`请求错误: ${response.status}`)
+      if (response) {
+        switch (response.status) {
+          case 401:
+            // 未授权，清除 token 并跳转登录页
+            const userStore = useUserStore()
+            userStore.logout()
+            router.push('/login')
+            break
+          case 403:
+            console.error('没有权限访问该资源（前端排查：1.跨域凭证 2.Token失效 3.接口路径）')
+            break
+          case 404:
+            console.error('请求的资源不存在')
+            break
+          case 500:
+            console.error('服务器内部错误')
+            break
+          default:
+            console.error(`请求错误: ${response.status}`)
+        }
+      } else if (error.request) {
+        console.error('网络错误，请检查网络连接（排查：1.穿透工具是否启动 2.代理域名是否正确）')
+      } else {
+        console.error('请求配置错误:', error.message)
       }
-    } else if (error.request) {
-      console.error('网络错误，请检查网络连接')
-    } else {
-      console.error('请求配置错误:', error.message)
-    }
 
-    return Promise.reject(error)
-  }
+      return Promise.reject(error)
+    }
 )
 
 // 封装 GET 请求
