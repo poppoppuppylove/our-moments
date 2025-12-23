@@ -171,10 +171,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { toast } from '@/composables/useToast'
+import { isTouchDevice } from '@/composables/useTouchGestures'
 import type { BlogMedia, UploadResponse } from '@/types'
 import { postApi, fileApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
@@ -198,6 +199,16 @@ const editorContent = ref<HTMLElement | null>(null)
 
 // 用于存储内联图片映射关系
 const inlineImages = ref<Map<string, BlogMedia>>(new Map())
+
+// 触摸设备检测
+const isMobile = ref(false)
+const editorScale = ref(1)
+
+// 内联图片触摸状态
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let currentDragImage: HTMLImageElement | null = null
+let dragStartX = 0
+let dragStartY = 0
 
 const form = reactive({
   title: '',
@@ -337,19 +348,31 @@ function insertImageAtCursor(imageUrl: string, imgId: string) {
   img.className = 'inline-image'
   img.style.cssText = 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;'
 
-  // 添加双击删除功能
+  // 添加双击/长按删除功能
   img.addEventListener('dblclick', () => {
-    if (confirm('删除这张图片？')) {
-      const mediaId = img.getAttribute('data-id')
-      if (mediaId) {
-        inlineImages.value.delete(mediaId)
-        const mediaIndex = form.mediaList.findIndex(m => `img_${m.mediaId}` === mediaId)
-        if (mediaIndex !== -1) {
-          form.mediaList.splice(mediaIndex, 1)
-        }
-      }
-      img.remove()
-      updateContent()
+    confirmDeleteImage(img)
+  })
+
+  // 移动端长按删除
+  let touchTimer: ReturnType<typeof setTimeout> | null = null
+  img.addEventListener('touchstart', (e) => {
+    touchTimer = setTimeout(() => {
+      e.preventDefault()
+      confirmDeleteImage(img)
+    }, 600)
+  }, { passive: false })
+
+  img.addEventListener('touchend', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer)
+      touchTimer = null
+    }
+  })
+
+  img.addEventListener('touchmove', () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer)
+      touchTimer = null
     }
   })
 
@@ -361,6 +384,22 @@ function insertImageAtCursor(imageUrl: string, imgId: string) {
   selection.addRange(currentRange)
 
   updateContent()
+}
+
+// 确认删除图片
+function confirmDeleteImage(img: HTMLImageElement) {
+  if (confirm('删除这张图片？')) {
+    const mediaId = img.getAttribute('data-id')
+    if (mediaId) {
+      inlineImages.value.delete(mediaId)
+      const mediaIndex = form.mediaList.findIndex(m => `img_${m.mediaId}` === mediaId)
+      if (mediaIndex !== -1) {
+        form.mediaList.splice(mediaIndex, 1)
+      }
+    }
+    img.remove()
+    updateContent()
+  }
 }
 
 function handleContentChange() {
@@ -485,7 +524,18 @@ onMounted(() => {
     router.push('/login')
     return
   }
+
+  // 检测移动设备
+  isMobile.value = isTouchDevice()
+
   loadPost()
+})
+
+onUnmounted(() => {
+  // 清理定时器
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+  }
 })
 </script>
 
@@ -758,10 +808,10 @@ onMounted(() => {
 // 响应式
 @media (max-width: 768px) {
   .post-new {
-    padding: 20px 16px;
+    padding: 16px 12px;
 
     &__card {
-      padding: 24px 20px;
+      padding: 20px 16px;
     }
 
     &__header {
@@ -770,8 +820,31 @@ onMounted(() => {
       align-items: flex-start;
     }
 
+    &__title {
+      font-size: 1.6rem;
+    }
+
+    &__actions {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+
+      // 触摸友好的按钮尺寸
+      :deep(.hand-button) {
+        min-height: 44px;
+        padding: 12px 20px;
+        font-size: 1rem;
+      }
+    }
+
     .form-row {
       grid-template-columns: 1fr;
+    }
+
+    .form-select {
+      min-height: 48px;
+      padding: 12px 14px;
+      font-size: 1rem;
     }
 
     .visibility-options {
@@ -783,10 +856,108 @@ onMounted(() => {
       flex-direction: row;
       justify-content: flex-start;
       gap: 12px;
-      padding: 14px 18px;
+      padding: 16px 18px;
+      min-height: 56px; // 触摸友好
 
       .visibility-label {
         min-width: 70px;
+      }
+    }
+
+    .editor-toolbar {
+      padding: 10px 14px;
+
+      :deep(.hand-button) {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.2rem;
+      }
+    }
+
+    .editor-content {
+      min-height: 180px;
+      padding: 14px;
+      font-size: 1rem;
+
+      :deep(.inline-image) {
+        max-width: 100%;
+      }
+    }
+
+    .tag-input-wrapper {
+      min-height: 56px;
+      padding: 14px;
+
+      .tag-input {
+        min-height: 44px;
+        font-size: 1rem;
+      }
+
+      .tag-item {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+
+        .tag-remove {
+          width: 24px;
+          height: 24px;
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+}
+
+// 小屏幕优化
+@media (max-width: 480px) {
+  .post-new {
+    padding: 12px 8px;
+
+    &__card {
+      padding: 16px 12px;
+    }
+
+    &__title {
+      font-size: 1.4rem;
+    }
+
+    .form-section label {
+      font-size: 1rem;
+    }
+  }
+}
+
+// 触摸设备通用优化
+@media (hover: none) and (pointer: coarse) {
+  .post-new {
+    // 所有可点击元素增大触摸区域
+    .form-select,
+    .date-input,
+    .tag-input {
+      min-height: 48px;
+    }
+
+    .visibility-option {
+      min-height: 56px;
+    }
+
+    // 内联图片提示
+    .editor-content {
+      :deep(.inline-image) {
+        &::after {
+          content: '长按删除';
+          position: absolute;
+          bottom: -20px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.75rem;
+          color: var(--color-ink-light);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        &:active::after {
+          opacity: 1;
+        }
       }
     }
   }

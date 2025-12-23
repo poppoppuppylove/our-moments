@@ -7,7 +7,21 @@
           <h1 class="navbar__title">Our Moments</h1>
         </div>
 
-        <div class="navbar__actions">
+        <!-- 移动端汉堡菜单按钮 -->
+        <button
+          v-if="isMobile"
+          class="navbar__hamburger"
+          :class="{ 'navbar__hamburger--active': isMobileMenuOpen }"
+          @click="toggleMobileMenu"
+          aria-label="切换菜单"
+        >
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+
+        <!-- 桌面端导航操作 -->
+        <div v-if="!isMobile" class="navbar__actions">
           <!-- 筛选按钮 -->
           <div class="navbar__filter">
             <HandButton
@@ -68,7 +82,69 @@
             </HandButton>
           </template>
         </div>
+
+        <!-- 移动端菜单面板 -->
+        <Transition name="mobile-menu">
+          <div v-if="isMobile && isMobileMenuOpen" class="navbar__mobile-menu">
+            <div class="mobile-menu__overlay" @click="closeMobileMenu"></div>
+            <div class="mobile-menu__content">
+              <!-- 用户信息 -->
+              <div v-if="userStore.isLoggedIn" class="mobile-menu__user">
+                <span class="mobile-menu__welcome">欢迎, {{ userStore.nickname }}!</span>
+              </div>
+
+              <!-- 菜单项 -->
+              <div class="mobile-menu__items">
+                <button class="mobile-menu__item" @click="handleMobileFilter">
+                  筛选
+                  <span v-if="hasActiveFilter" class="filter-badge"></span>
+                </button>
+
+                <button class="mobile-menu__item" @click="handleMobileBgUpload">
+                  更换背景
+                </button>
+
+                <button
+                  v-if="ui.backgroundImage"
+                  class="mobile-menu__item"
+                  @click="handleMobileClearBg"
+                >
+                  恢复默认背景
+                </button>
+
+                <template v-if="userStore.isLoggedIn">
+                  <button class="mobile-menu__item" @click="handleMobileFriends">
+                    好友
+                  </button>
+                  <button class="mobile-menu__item" @click="handleMobileProfile">
+                    个人资料
+                  </button>
+                  <button class="mobile-menu__item mobile-menu__item--danger" @click="handleMobileLogout">
+                    登出
+                  </button>
+                </template>
+                <template v-else>
+                  <button class="mobile-menu__item mobile-menu__item--primary" @click="handleMobileLogin">
+                    登录
+                  </button>
+                  <button class="mobile-menu__item mobile-menu__item--outline" @click="handleMobileRegister">
+                    注册
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </nav>
+
+      <!-- 隐藏的背景文件上传（移动端也需要） -->
+      <input
+        ref="bgInput"
+        type="file"
+        accept="image/*"
+        class="hidden-input"
+        @change="onBgFileChange"
+      />
 
       <!-- 筛选弹出面板 -->
       <Transition name="filter-slide">
@@ -200,15 +276,23 @@
               variant="polaroid"
               hoverable
               :rotated="true"
-              :rotation="getRandomRotation()"
+              :rotation="getStableRotation(post.postId)"
               class="post-card"
               :class="{ 'post-card--no-image': !post.mediaList || post.mediaList.length === 0 }"
               @click="goToPost(post.postId)"
           >
             <!-- 文章图片 -->
             <div v-if="post.mediaList && post.mediaList.length > 0" class="post-card__image">
-              <img :src="post.mediaList[0]?.mediaUrl" :alt="post.title" />
-              <Tape v-if="Math.random() > 0.5" :variant="getRandomTapeColor()" position="top-right" />
+              <img
+                v-lazy="post.mediaList[0]?.mediaUrl"
+                :alt="post.title"
+                class="lazy-image"
+              />
+              <Tape
+                v-if="shouldShowTape(post.postId)"
+                :variant="getTapeColor(post.postId)"
+                position="top-right"
+              />
             </div>
 
             <!-- 无图片占位区域 -->
@@ -248,7 +332,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/store/ui'
 import { useUserStore } from '@/store/user'
@@ -257,10 +341,10 @@ import HandButton from '@/components/base/HandButton.vue'
 import HandCard from '@/components/base/HandCard.vue'
 import HandFooter from '@/components/common/HandFooter.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
-// import Tape from '@/components/decorative/Tape.vue'
+import Tape from '@/components/decorative/Tape.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, Tag } from '@/types'
-import {toast} from "@/composables/useToast.ts";
+import {toast} from "@/composables/useToast.ts"
 
 const router = useRouter()
 const ui = useUiStore()
@@ -271,6 +355,67 @@ const bgInput = ref<HTMLInputElement | null>(null)
 
 // 所有可能的心情选项
 const allMoods = ['开心', '平静', '惬意', '感动', '期待', '思念']
+
+// 移动端汉堡菜单状态
+const isMobileMenuOpen = ref(false)
+const isMobile = ref(false)
+
+// 检测是否为移动端
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+  if (!isMobile.value) {
+    isMobileMenuOpen.value = false
+  }
+}
+
+function toggleMobileMenu() {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+function closeMobileMenu() {
+  isMobileMenuOpen.value = false
+}
+
+// 移动端菜单项处理函数
+function handleMobileFilter() {
+  closeMobileMenu()
+  toggleFilter()
+}
+
+function handleMobileBgUpload() {
+  closeMobileMenu()
+  triggerBgUpload()
+}
+
+function handleMobileClearBg() {
+  closeMobileMenu()
+  clearBg()
+}
+
+function handleMobileFriends() {
+  closeMobileMenu()
+  goToFriends()
+}
+
+function handleMobileProfile() {
+  closeMobileMenu()
+  goToProfile()
+}
+
+function handleMobileLogout() {
+  closeMobileMenu()
+  handleLogout()
+}
+
+function handleMobileLogin() {
+  closeMobileMenu()
+  goToLogin()
+}
+
+function handleMobileRegister() {
+  closeMobileMenu()
+  goToRegister()
+}
 
 // 筛选状态
 const selectedTag = ref<number | null>(null)
@@ -407,6 +552,10 @@ function handleLogout() {
 }
 
 onMounted(async () => {
+  // 检测移动端
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+
   // 尝试从后端获取文章
   try {
     const response = await postApi.getPosts()
@@ -425,6 +574,10 @@ onMounted(async () => {
   } catch (err) {
     console.warn('Failed to load tags')
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 
 function goToPost(postId: number) {
@@ -458,14 +611,33 @@ function formatDate(dateString: string): string {
   return `${year}年${month}月${day}日 ${hours}:${minutes}`
 }
 
-function getRandomTapeColor(): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
-  const colors: Array<'yellow' | 'pink' | 'blue' | 'green' | 'purple'> = ['yellow', 'pink', 'blue', 'green', 'purple']
-  return colors[Math.floor(Math.random() * colors.length)]!
+// 稳定的哈希函数，确保相同输入产生相同输出
+function stableHash(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash)
 }
 
-function getRandomRotation(): number {
-  // 生成 -5 到 5 度之间的随机旋转角度
-  return (Math.random() - 0.5) * 10
+// 根据 postId 决定是否显示胶带（稳定的，不会闪烁）
+function shouldShowTape(postId: number): boolean {
+  return stableHash(String(postId)) % 2 === 0
+}
+
+// 根据 postId 获取稳定的胶带颜色
+function getTapeColor(postId: number): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
+  const colors: Array<'yellow' | 'pink' | 'blue' | 'green' | 'purple'> = ['yellow', 'pink', 'blue', 'green', 'purple']
+  return colors[stableHash(String(postId)) % colors.length]!
+}
+
+// 根据 postId 获取稳定的旋转角度
+function getStableRotation(postId: number): number {
+  // 生成 -5 到 5 度之间的稳定旋转角度
+  const hash = stableHash(String(postId))
+  return ((hash % 100) / 100 - 0.5) * 10
 }
 </script>
 
@@ -549,6 +721,164 @@ function getRandomRotation(): number {
     font-size: 0.95rem;
     color: var(--color-ink-light);
     margin-right: 8px;
+  }
+
+  // 汉堡菜单按钮
+  &__hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 28px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 110;
+
+    .hamburger-line {
+      width: 100%;
+      height: 3px;
+      background-color: var(--color-soft-purple);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+
+    &--active {
+      .hamburger-line:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+      }
+      .hamburger-line:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+      }
+      .hamburger-line:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+      }
+    }
+  }
+
+  // 移动端菜单
+  &__mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+  }
+}
+
+// 移动端菜单样式
+.mobile-menu {
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+  }
+
+  &__content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    padding: 80px 20px 40px;
+    overflow-y: auto;
+  }
+
+  &__user {
+    padding: 16px 0;
+    margin-bottom: 16px;
+    border-bottom: 1px dashed var(--color-ink-light);
+  }
+
+  &__welcome {
+    font-family: var(--font-handwriting);
+    font-size: 1.2rem;
+    color: var(--color-soft-purple);
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(168, 140, 190, 0.08);
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    min-height: 48px; // 触摸友好的最小高度
+
+    &:hover, &:active {
+      background: rgba(168, 140, 190, 0.15);
+    }
+
+    &--primary {
+      background: var(--color-soft-purple);
+      color: white;
+
+      &:hover, &:active {
+        background: #8a6cb6;
+      }
+    }
+
+    &--outline {
+      background: transparent;
+      border: 1px solid var(--color-soft-purple);
+      color: var(--color-soft-purple);
+
+      &:hover, &:active {
+        background: rgba(168, 140, 190, 0.1);
+      }
+    }
+
+    &--danger {
+      color: #c44;
+
+      &:hover, &:active {
+        background: rgba(204, 68, 68, 0.1);
+      }
+    }
+  }
+}
+
+// 移动端菜单过渡动画
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+  transition: opacity 0.3s ease;
+
+  .mobile-menu__content {
+    transition: transform 0.3s ease;
+  }
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+  opacity: 0;
+
+  .mobile-menu__content {
+    transform: translateX(100%);
   }
 }
 
@@ -903,36 +1233,59 @@ function getRandomRotation(): number {
   color: var(--color-ink-light);
 }
 
+// 图片懒加载样式
+.lazy-image {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.lazy-loaded {
+    opacity: 1;
+  }
+}
+
+// 移动端响应式
 @media (max-width: 768px) {
   .home-page {
-    padding: 20px 16px;
+    padding: 16px 12px;
 
     &__title {
-      font-size: 2.5rem;
+      font-size: 2rem;
+    }
+
+    &__subtitle {
+      font-size: 0.95rem;
     }
 
     &__header {
-      margin-bottom: 40px;
+      margin-bottom: 30px;
+      padding-top: 10px;
     }
 
     &__navbar {
-      flex-direction: column;
-      gap: 12px;
-      padding: 12px;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
 
-    .navbar__actions {
+    &__new-post-btn {
       width: 100%;
-      justify-content: center;
-      flex-wrap: wrap;
+      max-width: 280px;
     }
   }
 
+  .navbar__title {
+    font-size: 1.4rem;
+  }
+
   .filter-panel {
-    left: 16px;
-    right: 16px;
-    top: 140px;
-    padding: 16px 20px;
+    left: 12px;
+    right: 12px;
+    top: 70px;
+    padding: 16px;
+    max-width: none;
   }
 
   .date-row {
@@ -943,12 +1296,90 @@ function getRandomRotation(): number {
 
   .date-input {
     width: 100%;
+    padding: 12px; // 触摸友好
   }
 
   .posts-grid {
     grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 8px;
+  }
+
+  .post-card {
+    min-height: auto;
+
+    &__image img {
+      height: 180px;
+    }
+
+    &__title {
+      font-size: 1.3rem;
+    }
+
+    &__excerpt {
+      font-size: 0.9rem;
+    }
+  }
+
+  .active-filters {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .filter-tag {
+    padding: 8px 14px; // 触摸友好
+    font-size: 0.9rem;
+  }
+}
+
+// 小屏幕优化（手机竖屏）
+@media (max-width: 480px) {
+  .home-page {
+    padding: 12px 8px;
+
+    &__title {
+      font-size: 1.8rem;
+    }
+
+    &__navbar {
+      padding: 10px 12px;
+    }
+  }
+
+  .navbar__title {
+    font-size: 1.2rem;
+  }
+
+  .posts-grid {
+    gap: 20px;
+    padding: 4px;
+  }
+
+  .post-card {
+    &__image img {
+      height: 160px;
+    }
+
+    &__body {
+      padding: 0;
+    }
+
+    &__title {
+      font-size: 1.2rem;
+    }
+  }
+
+  .mobile-menu__content {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+// 平板横屏优化
+@media (min-width: 769px) and (max-width: 1024px) {
+  .posts-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 30px;
-    padding: 10px;
   }
 }
 </style>

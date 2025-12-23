@@ -67,9 +67,9 @@
               </div>
 
               <Tape
-                v-if="index % 2 === 0"
-                :variant="getTapeColor(index)"
-                :position="index % 3 === 0 ? 'top-left' : 'top-right'"
+                v-if="shouldShowTape(block.media!, index)"
+                :variant="getStableTapeColor(block.media!, index)"
+                :position="getTapePosition(index)"
               />
             </div>
           </div>
@@ -120,7 +120,7 @@ import HandFooter from '@/components/common/HandFooter.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
 import HandError from '@/components/common/HandError.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
-// import Tape from '@/components/decorative/Tape.vue'
+import Tape from '@/components/decorative/Tape.vue'
 import PostComments from '@/components/PostComments.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, BlogMedia } from '@/types'
@@ -267,9 +267,21 @@ function getMediaStyle(media: BlogMedia, index: number) {
   }
 }
 
-function getTapeColor(index: number): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
+// 稳定的胶带显示逻辑
+function shouldShowTape(media: BlogMedia, index: number): boolean {
+  const key = media.mediaUrl || String(index)
+  return hashCode(key) % 2 === 0
+}
+
+function getStableTapeColor(media: BlogMedia, index: number): 'yellow' | 'pink' | 'blue' | 'green' | 'purple' {
   const colors: Array<'yellow' | 'pink' | 'blue' | 'green' | 'purple'> = ['yellow', 'pink', 'blue', 'green', 'purple']
-  return colors[index % colors.length]!
+  const key = media.mediaUrl || String(index)
+  return colors[hashCode(key) % colors.length]!
+}
+
+function getTapePosition(index: number): 'top' | 'top-left' | 'top-right' {
+  const positions: Array<'top' | 'top-left' | 'top-right'> = ['top', 'top-left', 'top-right']
+  return positions[index % positions.length]!
 }
 
 

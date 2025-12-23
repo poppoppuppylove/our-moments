@@ -200,4 +200,57 @@ function onClick(event: MouseEvent) {
     transform: rotate(360deg);
   }
 }
+
+// 触摸设备优化
+@media (hover: none) and (pointer: coarse) {
+  .hand-button {
+    // 增大触摸区域，符合 Apple HIG 44pt 最小尺寸
+    &--sm {
+      min-height: 40px;
+      padding: 10px 18px;
+    }
+
+    &--md {
+      min-height: 44px;
+      padding: 12px 24px;
+    }
+
+    &--lg {
+      min-height: 48px;
+      padding: 14px 32px;
+    }
+
+    // 禁用悬停动画（移动端不需要）
+    &:hover:not(.hand-button--disabled):not(.hand-button--loading) {
+      animation: none;
+    }
+
+    // 优化点击反馈
+    &:active:not(.hand-button--disabled):not(.hand-button--loading) {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+  }
+}
+
+// 移动端响应式
+@media (max-width: 768px) {
+  .hand-button {
+    &--sm {
+      min-height: 38px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+
+    &--md {
+      min-height: 42px;
+      padding: 10px 20px;
+    }
+
+    &--lg {
+      min-height: 46px;
+      padding: 12px 28px;
+    }
+  }
+}
 </style>
