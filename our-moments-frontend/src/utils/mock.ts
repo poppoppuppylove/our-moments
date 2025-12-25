@@ -107,6 +107,7 @@ export const mockPosts: BlogPost[] = [
     mood: '惬意',
     location: '家里',
     status: 1,
+    visibility: 'PUBLIC',
     createTime: '2024-12-15T14:30:00',
     updateTime: '2024-12-15T14:30:00',
     mediaList: generateMockMedia(1, 2),
@@ -128,6 +129,7 @@ export const mockPosts: BlogPost[] = [
     mood: '开心',
     location: '城市咖啡馆',
     status: 1,
+    visibility: 'PUBLIC',
     createTime: '2024-12-14T16:00:00',
     updateTime: '2024-12-14T16:00:00',
     mediaList: generateMockMedia(2, 4),
@@ -151,6 +153,7 @@ export const mockPosts: BlogPost[] = [
     mood: '感动',
     location: '海边',
     status: 1,
+    visibility: 'PUBLIC',
     createTime: '2024-12-10T18:30:00',
     updateTime: '2024-12-10T18:30:00',
     mediaList: generateMockMedia(3, 3),
@@ -174,6 +177,7 @@ export const mockPosts: BlogPost[] = [
     mood: '思念',
     location: '窗边',
     status: 1,
+    visibility: 'PUBLIC',
     createTime: '2024-12-08T20:00:00',
     updateTime: '2024-12-08T20:00:00',
     mediaList: generateMockMedia(4, 1),
@@ -189,7 +193,7 @@ export const mockPosts: BlogPost[] = [
 export function generateMockPost(id: number): BlogPost {
   const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)]!
   const randomCategory = mockCategories[Math.floor(Math.random() * mockCategories.length)]!
-  const randomTags = mockTags
+  const randomTags = [...mockTags]
     .sort(() => Math.random() - 0.5)
     .slice(0, Math.floor(Math.random() * 3) + 1)
 
@@ -215,6 +219,7 @@ export function generateMockPost(id: number): BlogPost {
     mood: moods[Math.floor(Math.random() * moods.length)]!,
     location: '某个地方',
     status: 1,
+    visibility: 'PUBLIC',
     createTime: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
     updateTime: new Date().toISOString(),
     mediaList: generateMockMedia(id, Math.floor(Math.random() * 4) + 1),

@@ -46,6 +46,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/friends/FriendsPage.vue'),
     meta: { title: '我的好友 - Our Moments', requiresAuth: true }
   },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/views/notifications/NotificationsPage.vue'),
+    meta: { title: '通知中心 - Our Moments', requiresAuth: true }
+  },
 
   // ========== 后台管理端 ==========
   {

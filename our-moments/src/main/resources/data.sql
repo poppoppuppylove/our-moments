@@ -37,8 +37,6 @@ CREATE TABLE IF NOT EXISTS sys_friendship (
     UNIQUE KEY unique_friendship (user_id, friend_id)
 );
 
--- Add visibility column to blog_post table
-ALTER TABLE blog_post ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) NOT NULL DEFAULT 'PUBLIC';
 
 -- Create comment table
 CREATE TABLE IF NOT EXISTS blog_comment (

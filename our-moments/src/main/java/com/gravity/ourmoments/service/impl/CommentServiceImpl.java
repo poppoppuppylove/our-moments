@@ -1,8 +1,11 @@
 package com.gravity.ourmoments.service.impl;
 
+import com.gravity.ourmoments.entity.BlogPost;
 import com.gravity.ourmoments.entity.Comment;
+import com.gravity.ourmoments.mapper.BlogPostMapper;
 import com.gravity.ourmoments.mapper.CommentMapper;
 import com.gravity.ourmoments.service.CommentService;
+import com.gravity.ourmoments.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -12,6 +15,12 @@ public class CommentServiceImpl implements CommentService {
 
     @Autowired
     private CommentMapper commentMapper;
+
+    @Autowired
+    private BlogPostMapper blogPostMapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public Comment getCommentById(Long commentId) {
@@ -31,6 +40,18 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Comment createComment(Comment comment) {
         commentMapper.insert(comment);
+
+        // 发送评论通知
+        BlogPost post = blogPostMapper.findById(comment.getPostId());
+        if (post != null) {
+            notificationService.sendCommentNotification(
+                    post.getUserId(),
+                    comment.getUserId(),
+                    comment.getCommentId(),
+                    post.getTitle() != null ? post.getTitle() : "未命名文章"
+            );
+        }
+
         return comment;
     }
 

@@ -63,6 +63,7 @@
 
           <template v-if="userStore.isLoggedIn">
             <span class="navbar__welcome">欢迎, {{ userStore.nickname }}!</span>
+            <NotificationBell />
             <HandButton variant="ghost" size="sm" @click="goToFriends">
               好友
             </HandButton>
@@ -113,6 +114,9 @@
                 </button>
 
                 <template v-if="userStore.isLoggedIn">
+                  <button class="mobile-menu__item" @click="handleMobileNotifications">
+                    通知
+                  </button>
                   <button class="mobile-menu__item" @click="handleMobileFriends">
                     好友
                   </button>
@@ -342,6 +346,7 @@ import HandCard from '@/components/base/HandCard.vue'
 import HandFooter from '@/components/common/HandFooter.vue'
 import PaperTexture from '@/components/decorative/PaperTexture.vue'
 import Tape from '@/components/decorative/Tape.vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 import { mockPosts } from '@/utils/mock'
 import type { BlogPost, Tag } from '@/types'
 import {toast} from "@/composables/useToast.ts"
@@ -380,6 +385,11 @@ function closeMobileMenu() {
 function handleMobileFilter() {
   closeMobileMenu()
   toggleFilter()
+}
+
+function handleMobileNotifications() {
+  closeMobileMenu()
+  router.push('/notifications')
 }
 
 function handleMobileBgUpload() {

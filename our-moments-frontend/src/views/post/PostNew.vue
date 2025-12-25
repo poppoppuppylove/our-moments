@@ -202,13 +202,9 @@ const inlineImages = ref<Map<string, BlogMedia>>(new Map())
 
 // 触摸设备检测
 const isMobile = ref(false)
-const editorScale = ref(1)
 
 // 内联图片触摸状态
 let longPressTimer: ReturnType<typeof setTimeout> | null = null
-let currentDragImage: HTMLImageElement | null = null
-let dragStartX = 0
-let dragStartY = 0
 
 const form = reactive({
   title: '',

@@ -114,3 +114,14 @@ export interface Comment {
   updateTime: string
   author: User
 }
+
+// 通知类型
+export interface Notification {
+  notificationId: number
+  userId: number
+  type: 'COMMENT' | 'FRIEND_REQUEST' | 'NEW_POST'
+  content: string
+  relatedId: number
+  isRead: boolean
+  createTime: string
+}

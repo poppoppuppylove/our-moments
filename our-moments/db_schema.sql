@@ -3,8 +3,7 @@
 -- 技术栈：MySQL, SpringBoot, MyBatis
 -- 字符集：utf8mb4
 
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
+
 
 -- ----------------------------
 -- 1. 用户表 (sys_user)
@@ -64,6 +63,7 @@ CREATE TABLE `blog_post` (
   `status` tinyint(4) DEFAULT '1' COMMENT '状态(0:草稿 1:发布)',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `visibility` varchar(20) DEFAULT 'PUBLIC',
   PRIMARY KEY (`post_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_category_id` (`category_id`)
@@ -152,4 +152,70 @@ INSERT INTO `blog_media` (`post_id`, `media_url`, `media_type`, `rotation`, `sca
 INSERT INTO `blog_post_tag` (`post_id`, `tag_id`) VALUES
 (1002, 104); -- 猫咪
 
-SET FOREIGN_KEY_CHECKS = 1;
+-- Insert sample users (ignore if already exist)
+INSERT IGNORE INTO sys_user (username, password, nickname, avatar, bio, create_time, update_time) VALUES
+('admin', 'admin123', '管理员', 'https://api.dicebear.com/7.x/adventurer/svg?seed=admin', '系统管理员', NOW(), NOW()),
+('xiaoming', '123456', '小明', 'https://api.dicebear.com/7.x/adventurer/svg?seed=xiaoming', '喜欢记录生活的点点滴滴，用文字和图片留住美好的瞬间。', NOW(), NOW()),
+('xiaohong', '123456', '小红', 'https://api.dicebear.com/7.x/adventurer/svg?seed=xiaohong', '热爱生活，热爱分享。', NOW(), NOW());
+
+-- Insert sample categories
+INSERT IGNORE INTO sys_category (name, icon_url, sort_order, create_time) VALUES
+('日常', '', 1, NOW()),
+('美食', '', 2, NOW()),
+('旅行', '', 3, NOW()),
+('心情', '', 4, NOW());
+
+-- Insert sample tags
+INSERT IGNORE INTO sys_tag (name, create_time) VALUES
+('周末', NOW()),
+('美好', NOW()),
+('阳光', NOW()),
+('咖啡', NOW()),
+('读书', NOW()),
+('散步', NOW()),
+('感动', NOW()),
+('开心', NOW()),
+('惬意', NOW()),
+('思念', NOW());
+
+-- Create friendship table
+CREATE TABLE IF NOT EXISTS sys_friendship (
+                                              friendship_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                              user_id BIGINT NOT NULL,
+                                              friend_id BIGINT NOT NULL,
+                                              status VARCHAR(20) NOT NULL DEFAULT 'PENDING', -- PENDING, ACCEPTED, REJECTED
+    create_time DATETIME NOT NULL,
+    update_time DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES sys_user(user_id),
+    FOREIGN KEY (friend_id) REFERENCES sys_user(user_id),
+    UNIQUE KEY unique_friendship (user_id, friend_id)
+    );
+
+
+-- Create comment table
+CREATE TABLE IF NOT EXISTS blog_comment (
+                                            comment_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                            post_id BIGINT NOT NULL,
+                                            user_id BIGINT NOT NULL,
+                                            content TEXT NOT NULL,
+                                            position INT NOT NULL DEFAULT 0, -- 评论在文章中的位置
+                                            create_time DATETIME NOT NULL,
+                                            update_time DATETIME NOT NULL,
+                                            FOREIGN KEY (post_id) REFERENCES blog_post(post_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES sys_user(user_id)
+    );
+
+-- Create notification table
+CREATE TABLE IF NOT EXISTS sys_notification (
+    notification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL, -- COMMENT, FRIEND_REQUEST, NEW_POST
+    content TEXT,
+    related_id BIGINT, -- 关联ID（评论ID、好友关系ID、文章ID等）
+    is_read BOOLEAN DEFAULT FALSE,
+    create_time DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES sys_user(user_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_is_read (is_read),
+    INDEX idx_create_time (create_time)
+);
