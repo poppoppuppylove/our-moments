@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { notificationApi } from '@/api'
-import type { Notification } from '@/types'
+import type { AppNotification } from '@/types'
 import { useUserStore } from './user'
 
 export const useNotificationStore = defineStore('notification', () => {
-  const notifications = ref<Notification[]>([])
+  const notifications = ref<AppNotification[]>([])
   const unreadCount = ref(0)
   const loading = ref(false)
 
@@ -80,7 +80,7 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  function addNotification(notification: Notification) {
+  function addNotification(notification: AppNotification) {
     // 将新通知添加到列表顶部
     notifications.value.unshift(notification)
 
@@ -95,7 +95,7 @@ export const useNotificationStore = defineStore('notification', () => {
     if (index !== -1) {
       const removed = notifications.value.splice(index, 1)[0]
       // 如果是未读通知，减少未读计数
-      if (!removed.isRead) {
+      if (removed && !removed.isRead) {
         unreadCount.value--
       }
     }

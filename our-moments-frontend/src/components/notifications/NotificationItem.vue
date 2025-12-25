@@ -87,14 +87,14 @@
 </template>
 
 <script setup lang="ts">
-import type { Notification } from '@/types'
+import type { AppNotification } from '@/types'
 
 interface Props {
-  notification: Notification
+  notification: AppNotification
 }
 
 interface Emits {
-  (e: 'click', notification: Notification): void
+  (e: 'click', notification: AppNotification): void
   (e: 'mark-as-read', notificationId: number): void
 }
 

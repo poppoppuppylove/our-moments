@@ -46,6 +46,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Swagger UI endpoints
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // WebSocket endpoints
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws/info*").permitAll()
                         // Public Auth endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         // Public Register endpoint (POST /api/users)

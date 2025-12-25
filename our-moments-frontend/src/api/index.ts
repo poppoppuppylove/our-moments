@@ -1,5 +1,5 @@
 import { get, post, put, del, upload } from './request'
-import type { User, BlogPost, Category, Tag, AuthRequest, UploadResponse, Comment } from '@/types'
+import type { User, BlogPost, Category, Tag, AuthRequest, UploadResponse, Comment, AppNotification } from '@/types'
 
 // 认证相关 API
 export const authApi = {
@@ -123,8 +123,8 @@ export const commentApi = {
 
 // 通知 API
 export const notificationApi = {
-    getNotifications: (userId: number) => get<Notification[]>(`/notifications/user/${userId}`),
-    markAsRead: (id: number) => put<Notification>(`/notifications/${id}/read`),
+    getNotifications: (userId: number) => get<AppNotification[]>(`/notifications/user/${userId}`),
+    markAsRead: (id: number) => put<AppNotification>(`/notifications/${id}/read`),
     markAllAsRead: (userId: number) => put<void>(`/notifications/read-all`, null, { params: { userId } }),
     getUnreadCount: (userId: number) => get<number>(`/notifications/unread-count/${userId}`)
 }

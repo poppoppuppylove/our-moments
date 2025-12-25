@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Stomp } from '@stomp/stompjs'
+import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
-import type { Notification } from '@/types'
+import type { AppNotification } from '@/types'
 import { useNotificationStore } from '@/store/notification'
 import { useUserStore } from '@/store/user'
 
@@ -22,7 +22,7 @@ interface WebSocketHook {
 
 // 默认配置
 const DEFAULT_CONFIG: WebSocketConfig = {
-  url: '/api/ws',
+  url: '/ws',
   reconnectDelay: 5000,
   heartbeatIncoming: 10000,
   heartbeatOutgoing: 10000
@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: WebSocketConfig = {
 export function useWebSocket(config: WebSocketConfig = DEFAULT_CONFIG): WebSocketHook {
   const isConnected = ref(false)
   const error = ref<string | null>(null)
-  const stompClient = ref<any>(null)
+  const stompClient = ref<Client | null>(null)
   const reconnectTimeout = ref<number | null>(null)
 
   const notificationStore = useNotificationStore()
@@ -44,13 +44,29 @@ export function useWebSocket(config: WebSocketConfig = DEFAULT_CONFIG): WebSocke
       return
     }
 
-    try {
-      // 创建SockJS连接
-      const socket = new SockJS(config.url)
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('token')
 
+    try {
       // 创建STOMP客户端
-      stompClient.value = Stomp.over(socket)
-      stompClient.value.connect({}, onConnected, onError)
+      stompClient.value = new Client({
+        brokerURL: config.url,
+        connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+        debug: function (str) {
+          console.log(str)
+        },
+        reconnectDelay: config.reconnectDelay,
+        heartbeatIncoming: config.heartbeatIncoming,
+        heartbeatOutgoing: config.heartbeatOutgoing,
+        webSocketFactory: function () {
+          return new SockJS(config.url) as any
+        },
+        onConnect: onConnected,
+        onStompError: onError,
+        onWebSocketError: onError
+      })
+
+      stompClient.value.activate()
     } catch (err) {
       handleError('Failed to establish WebSocket connection')
     }
@@ -59,7 +75,7 @@ export function useWebSocket(config: WebSocketConfig = DEFAULT_CONFIG): WebSocke
   // 断开WebSocket连接
   const disconnect = () => {
     if (stompClient.value) {
-      stompClient.value.disconnect()
+      stompClient.value.deactivate()
     }
 
     isConnected.value = false
@@ -77,7 +93,7 @@ export function useWebSocket(config: WebSocketConfig = DEFAULT_CONFIG): WebSocke
     error.value = null
 
     // 订阅用户特定的通知频道
-    if (userStore.user?.userId) {
+    if (userStore.user?.userId && stompClient.value) {
       stompClient.value.subscribe(
         `/user/${userStore.user.userId}/queue/notifications`,
         onNotificationReceived
@@ -100,7 +116,7 @@ export function useWebSocket(config: WebSocketConfig = DEFAULT_CONFIG): WebSocke
   // 通知接收回调
   const onNotificationReceived = (payload: any) => {
     try {
-      const notification: Notification = JSON.parse(payload.body)
+      const notification: AppNotification = JSON.parse(payload.body)
       notificationStore.addNotification(notification)
     } catch (err) {
       console.error('Failed to parse notification:', err)

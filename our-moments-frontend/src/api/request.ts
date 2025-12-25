@@ -15,11 +15,12 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const userStore = useUserStore()
+        // 直接从 localStorage 获取 token，避免 Pinia 初始化问题
+        const token = localStorage.getItem('token')
 
         // 添加 token 到请求头
-        if (userStore.token) {
-            config.headers.Authorization = `Bearer ${userStore.token}`
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
         }
 
         return config

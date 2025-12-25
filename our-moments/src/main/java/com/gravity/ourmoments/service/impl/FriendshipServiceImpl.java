@@ -46,7 +46,16 @@ public class FriendshipServiceImpl implements FriendshipService {
         // 检查是否已经存在好友关系
         Friendship existing = friendshipMapper.findByUserAndFriend(userId, friendId);
         if (existing != null) {
-            return existing;
+            // 如果是已接受的状态，直接返回
+            if ("ACCEPTED".equals(existing.getStatus())) {
+                return existing;
+            }
+            // 如果是待处理状态，不允许重复发送
+            if ("PENDING".equals(existing.getStatus())) {
+                return existing;
+            }
+            // 如果已拒绝或其他状态，可以重新发送，先删除旧记录
+            friendshipMapper.deleteByUserAndFriend(userId, friendId);
         }
 
         // 创建好友请求

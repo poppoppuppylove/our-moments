@@ -113,7 +113,7 @@
                 variant="ghost"
                 size="sm"
                 class="delete-btn"
-                @click="removeFriend(friendship.friendId)"
+                @click="removeFriend(friendship.friend?.userId)"
               >
                 删除
               </HandButton>
@@ -168,7 +168,7 @@ const pendingRequests = computed(() => {
 
 // 检查是否已是好友
 function isFriend(userId: number): boolean {
-  return friends.value.some(f => f.friendId === userId || f.userId === userId)
+  return friends.value.some(f => f.friend?.userId === userId)
 }
 
 // 加载好友列表
@@ -262,8 +262,8 @@ async function rejectRequest(friendshipId: number) {
 }
 
 // 删除好友
-async function removeFriend(friendId: number) {
-  if (!userStore.user) return
+async function removeFriend(friendId: number | undefined) {
+  if (!userStore.user || !friendId) return
 
   if (!confirm('确定要删除这位好友吗？')) return
 

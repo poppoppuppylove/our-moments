@@ -6,6 +6,7 @@ import com.gravity.ourmoments.mapper.NotificationMapper;
 import com.gravity.ourmoments.mapper.UserMapper;
 import com.gravity.ourmoments.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     @Override
     public Notification createNotification(Notification notification) {
         notification.setCreateTime(LocalDateTime.now());
@@ -27,6 +31,8 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setIsRead(false);
         }
         notificationMapper.insert(notification);
+        // 发布事件到 WebSocket 监听器
+        eventPublisher.publishEvent(notification);
         return notification;
     }
 

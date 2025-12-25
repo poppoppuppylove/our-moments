@@ -116,7 +116,7 @@ export interface Comment {
 }
 
 // 通知类型
-export interface Notification {
+export interface AppNotification {
   notificationId: number
   userId: number
   type: 'COMMENT' | 'FRIEND_REQUEST' | 'NEW_POST'
