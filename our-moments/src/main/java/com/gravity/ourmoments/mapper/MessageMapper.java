@@ -3,6 +3,7 @@ package com.gravity.ourmoments.mapper;
 import com.gravity.ourmoments.entity.Message;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper

@@ -219,3 +219,19 @@ CREATE TABLE IF NOT EXISTS sys_notification (
     INDEX idx_is_read (is_read),
     INDEX idx_create_time (create_time)
 );
+
+-- Create message table
+CREATE TABLE IF NOT EXISTS sys_message (
+    message_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sender_id BIGINT NOT NULL,
+    receiver_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    create_time DATETIME NOT NULL,
+    update_time DATETIME NOT NULL,
+    FOREIGN KEY (sender_id) REFERENCES sys_user(user_id),
+    FOREIGN KEY (receiver_id) REFERENCES sys_user(user_id),
+    INDEX idx_sender_receiver (sender_id, receiver_id),
+    INDEX idx_receiver_time (receiver_id, create_time),
+    INDEX idx_unread (receiver_id, is_read)
+);

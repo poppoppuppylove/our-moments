@@ -106,6 +106,10 @@
                 <option value="感动">感动</option>
                 <option value="期待">期待</option>
                 <option value="思念">思念</option>
+                <option value="伤心">伤心</option>
+                <option value="愤怒">愤怒</option>
+                <option value="焦虑">焦虑</option>
+                <option value="疲惫">疲惫</option>
               </select>
             </div>
 

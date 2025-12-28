@@ -52,6 +52,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/notifications/NotificationsPage.vue'),
     meta: { title: '通知中心 - Our Moments', requiresAuth: true }
   },
+  {
+    path: '/chat/:friendId?',
+    name: 'Chat',
+    component: () => import('@/views/chat/ChatPage.vue'),
+    meta: { title: '私信聊天 - Our Moments', requiresAuth: true }
+  },
 
   // ========== 后台管理端 ==========
   {

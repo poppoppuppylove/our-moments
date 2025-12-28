@@ -125,3 +125,14 @@ export interface AppNotification {
   isRead: boolean
   createTime: string
 }
+
+// 消息类型
+export interface Message {
+  messageId: number
+  senderId: number
+  receiverId: number
+  content: string
+  isRead: boolean
+  createTime: string
+  updateTime: string
+}

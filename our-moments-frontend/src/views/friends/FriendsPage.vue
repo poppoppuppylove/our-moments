@@ -36,20 +36,27 @@
               <span class="user-nickname">{{ searchResult.nickname }}</span>
               <span class="user-username">@{{ searchResult.username }}</span>
             </div>
-            <HandButton
-              v-if="!isFriend(searchResult.userId) && searchResult.userId !== userStore.user?.userId"
-              variant="outline"
-              size="sm"
-              @click="sendFriendRequest(searchResult.userId)"
-              :loading="sendingRequest"
-            >
-              添加好友
-            </HandButton>
-            <span v-else-if="searchResult.userId === userStore.user?.userId" class="self-tag">
+            <div class="user-actions" v-if="searchResult.userId !== userStore.user?.userId">
+              <HandButton
+                v-if="!isFriend(searchResult.userId)"
+                variant="outline"
+                size="sm"
+                @click="sendFriendRequest(searchResult.userId)"
+                :loading="sendingRequest"
+              >
+                添加好友
+              </HandButton>
+              <HandButton
+                v-else
+                variant="primary"
+                size="sm"
+                @click="startChat(searchResult.userId)"
+              >
+                私信
+              </HandButton>
+            </div>
+            <span v-else class="self-tag">
               这是你自己
-            </span>
-            <span v-else class="friend-tag">
-              已是好友
             </span>
           </div>
         </div>
@@ -109,6 +116,14 @@
                 <span class="friend-nickname">{{ friendship.friend?.nickname }}</span>
                 <span class="friend-username">@{{ friendship.friend?.username }}</span>
               </div>
+              <HandButton
+                variant="ghost"
+                size="sm"
+                class="chat-btn"
+                @click="startChat(friendship.friend?.userId)"
+              >
+                私信
+              </HandButton>
               <HandButton
                 variant="ghost"
                 size="sm"
@@ -279,6 +294,12 @@ function goBack() {
   router.push('/')
 }
 
+// 开始聊天
+function startChat(friendId: number | undefined) {
+  if (!friendId) return
+  router.push(`/chat/${friendId}`)
+}
+
 onMounted(() => {
   if (!userStore.isLoggedIn) {
     router.push('/login')
@@ -334,6 +355,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .user-avatar {
@@ -441,6 +467,14 @@ onMounted(() => {
 .friend-actions {
   display: flex;
   gap: 8px;
+}
+
+.chat-btn {
+  color: var(--color-soft-purple);
+
+  &:hover {
+    color: var(--color-soft-purple-dark);
+  }
 }
 
 .delete-btn {

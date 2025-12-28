@@ -1,5 +1,5 @@
 import { get, post, put, del, upload } from './request'
-import type { User, BlogPost, Category, Tag, AuthRequest, UploadResponse, Comment, AppNotification } from '@/types'
+import type { User, BlogPost, Category, Tag, AuthRequest, UploadResponse, Comment, AppNotification, Message } from '@/types'
 
 // 认证相关 API
 export const authApi = {
@@ -127,4 +127,18 @@ export const notificationApi = {
     markAsRead: (id: number) => put<AppNotification>(`/notifications/${id}/read`),
     markAllAsRead: (userId: number) => put<void>(`/notifications/read-all`, null, { params: { userId } }),
     getUnreadCount: (userId: number) => get<number>(`/notifications/unread-count/${userId}`)
+}
+
+// 消息 API
+export const messageApi = {
+    sendMessage: (receiverId: number, content: string) =>
+        post<Message>('/messages/send', null, { params: { receiverId, content } }),
+    getChatHistory: (friendId: number) =>
+        get<Message[]>(`/messages/history`, { friendId }),
+    getUnreadMessages: () =>
+        get<Message[]>(`/messages/unread`),
+    markAsRead: (senderId: number) =>
+        put<void>(`/messages/read`, null, { params: { senderId } }),
+    deleteMessage: (messageId: number) =>
+        del<void>(`/messages/${messageId}`)
 }
