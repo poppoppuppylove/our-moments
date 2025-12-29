@@ -230,24 +230,30 @@ async function loadPost() {
 
   try {
     const post = await postApi.getPost(postId)
+
     // 检查是否有权限编辑（必须是作者）
     if (post.userId !== userStore.user?.userId) {
       toast.warning('您没有权限编辑此文章')
       router.push('/')
       return
     }
+
+    // 先设置 loading 为 false，让表单渲染出来
+    loading.value = false
+
+    // 然后在下一个 tick 填充表单（等待 DOM 更新）
+    await nextTick()
     populateForm(post)
   } catch (err) {
     console.error('Failed to load post:', err)
     toast.error('加载文章失败')
     router.push('/')
-  } finally {
     loading.value = false
   }
 }
 
 function populateForm(post: any) {
-  form.title = post.title
+  form.title = post.title || ''
   form.content = post.content || ''
   form.weather = post.weather || ''
   form.mood = post.mood || ''
@@ -257,26 +263,104 @@ function populateForm(post: any) {
   form.tags = post.tagList?.map((t: any) => t.name) || []
 
   // 设置编辑器内容
-  nextTick(() => {
-    if (editorContent.value) {
-      let content = post.content || ''
+  if (editorContent.value) {
+    let content = post.content || ''
 
-      // 重建图片映射并替换图片标记
-      if (post.mediaList) {
-        post.mediaList.forEach((media: BlogMedia) => {
-          const imgId = `img_${media.mediaId}`
-          inlineImages.value.set(imgId, media)
-          // 替换图片标记为实际的img标签
+    console.log('编辑模式 - 原始内容:', content)
+    console.log('编辑模式 - 媒体列表:', post.mediaList)
+
+    // 重建图片映射并替换图片标记
+    if (post.mediaList && post.mediaList.length > 0) {
+      // 创建一个 Set 来追踪已处理的图片
+      const processedImages = new Set<string>()
+
+      post.mediaList.forEach((media: BlogMedia) => {
+        const imgId = `img_${media.mediaId}`
+        inlineImages.value.set(imgId, media)
+
+        console.log('处理媒体:', imgId, media.mediaUrl)
+
+        // 尝试替换自定义图片标记格式 <img-src="img_xxx"/>
+        const customTagPattern = `<img-src="${imgId}"\\s*/>`
+        const customTagRegex = new RegExp(customTagPattern, 'g')
+        if (content.includes(`<img-src="${imgId}"`)) {
           content = content.replace(
-            `<img-src="${imgId}"/>`,
+            customTagRegex,
             `<img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/>`
           )
-        })
-      }
+          processedImages.add(imgId)
+          console.log('替换了自定义标记:', imgId)
+        }
 
-      editorContent.value.innerHTML = content
+        // 如果内容中已经有实际的 img 标签但没有 data-id，添加 data-id
+        const escapedUrl = media.mediaUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const imgRegex = new RegExp(`<img[^>]*src=["']${escapedUrl}["'][^>]*>`, 'g')
+        const imgMatches = content.match(imgRegex)
+        if (imgMatches) {
+          content = content.replace(imgRegex, (match: string) => {
+            processedImages.add(imgId)
+            // 如果已经有 data-id，跳过
+            if (match.includes('data-id')) {
+              return match
+            }
+            // 添加 data-id 和样式
+            return match.replace('<img', `<img data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"`)
+          })
+          console.log('更新了现有图片标签:', imgId)
+        }
+      })
+
+      // 如果有媒体没有在内容中找到对应的图片，在内容末尾添加
+      post.mediaList.forEach((media: BlogMedia) => {
+        const imgId = `img_${media.mediaId}`
+        // 检查内容中是否包含这个图片的 URL 或 data-id
+        if (!content.includes(media.mediaUrl) && !content.includes(`data-id="${imgId}"`)) {
+          content += `<p><img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/></p>`
+          console.log('在末尾添加图片:', imgId)
+        }
+      })
     }
-  })
+
+    console.log('编辑模式 - 处理后内容:', content)
+
+    editorContent.value.innerHTML = content
+
+    // 为已存在的图片添加删除事件
+    const images = editorContent.value.querySelectorAll('img')
+    images.forEach((img) => {
+      const imgElement = img as HTMLImageElement
+
+      // 确保所有图片都有正确的样式
+      imgElement.classList.add('inline-image')
+      imgElement.style.cssText = 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;'
+
+      imgElement.addEventListener('dblclick', () => {
+        confirmDeleteImage(imgElement)
+      })
+
+      let touchTimer: ReturnType<typeof setTimeout> | null = null
+      imgElement.addEventListener('touchstart', (e) => {
+        touchTimer = setTimeout(() => {
+          e.preventDefault()
+          confirmDeleteImage(imgElement)
+        }, 600)
+      }, { passive: false })
+
+      imgElement.addEventListener('touchend', () => {
+        if (touchTimer) {
+          clearTimeout(touchTimer)
+          touchTimer = null
+        }
+      })
+
+      imgElement.addEventListener('touchmove', () => {
+        if (touchTimer) {
+          clearTimeout(touchTimer)
+          touchTimer = null
+        }
+      })
+    })
+  }
 }
 
 // 富文本编辑器相关函数

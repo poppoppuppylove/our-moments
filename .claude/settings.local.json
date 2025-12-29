@@ -24,7 +24,9 @@
       "Bash(cmd //c \"taskkill /PID 49484 /F\")",
       "Bash(del:*)",
       "Bash(mysql:*)",
-      "Bash(cmd:*)"
+      "Bash(cmd:*)",
+      "Bash(mvn compile)",
+      "Bash(mvn compile:*)"
     ]
   }
 }

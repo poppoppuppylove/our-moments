@@ -16,4 +16,5 @@ public interface NotificationService {
     void sendCommentNotification(Long postAuthorId, Long commenterId, Long commentId, String postTitle);
     void sendFriendRequestNotification(Long recipientId, Long requesterId, Long friendshipId);
     void sendNewPostNotificationToFriends(Long authorId, Long postId, String postTitle);
+    void sendMessageNotification(Long receiverId, Long senderId, Long messageId, String messageContent);
 }

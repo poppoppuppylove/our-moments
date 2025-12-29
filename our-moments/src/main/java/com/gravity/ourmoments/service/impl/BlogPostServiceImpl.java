@@ -7,6 +7,7 @@ import com.gravity.ourmoments.mapper.BlogMediaMapper;
 import com.gravity.ourmoments.mapper.BlogPostMapper;
 import com.gravity.ourmoments.service.BlogPostService;
 import com.gravity.ourmoments.service.FriendshipService;
+import com.gravity.ourmoments.service.NotificationService;
 import com.gravity.ourmoments.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class BlogPostServiceImpl implements BlogPostService {
 
     @Autowired
     private TagService tagService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public BlogPost getPostById(Long postId) {
@@ -73,6 +77,12 @@ public class BlogPostServiceImpl implements BlogPostService {
             }
         }
 
+        // 4. 发布帖子后，通知好友（仅当帖子是已发布状态且可见性不是 PRIVATE）
+        if (post.getStatus() != null && post.getStatus() == 1
+            && !"PRIVATE".equals(post.getVisibility())) {
+            String postTitle = post.getTitle() != null ? post.getTitle() : "新日志";
+            notificationService.sendNewPostNotificationToFriends(post.getUserId(), post.getPostId(), postTitle);
+        }
 
         return getPostById(post.getPostId());
     }

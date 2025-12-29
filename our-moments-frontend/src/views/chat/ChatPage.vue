@@ -121,12 +121,16 @@ const friendId = computed(() => {
   return id ? Number(id) : null
 })
 
-// 格式化时间
+// 格式化时间（显示完整的年月日时分秒）
 function formatTime(timeString: string): string {
   const date = new Date(timeString)
-  return date.toLocaleTimeString('zh-CN', {
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 

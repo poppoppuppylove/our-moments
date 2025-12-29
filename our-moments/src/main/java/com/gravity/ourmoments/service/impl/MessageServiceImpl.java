@@ -3,6 +3,7 @@ package com.gravity.ourmoments.service.impl;
 import com.gravity.ourmoments.entity.Message;
 import com.gravity.ourmoments.mapper.MessageMapper;
 import com.gravity.ourmoments.service.MessageService;
+import com.gravity.ourmoments.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,9 @@ public class MessageServiceImpl implements MessageService {
     @Autowired
     private MessageMapper messageMapper;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Override
     public Message sendMessage(Long senderId, Long receiverId, String content) {
         Message message = new Message();
@@ -26,6 +30,10 @@ public class MessageServiceImpl implements MessageService {
         message.setUpdateTime(LocalDateTime.now());
 
         messageMapper.insert(message);
+
+        // 发送私信通知
+        notificationService.sendMessageNotification(receiverId, senderId, message.getMessageId(), content);
+
         return message;
     }
 

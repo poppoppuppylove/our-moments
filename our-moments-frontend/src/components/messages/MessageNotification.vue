@@ -110,5 +110,3 @@ function openChat() {
   white-space: nowrap;
 }
 </style>
-</script>
-</file>

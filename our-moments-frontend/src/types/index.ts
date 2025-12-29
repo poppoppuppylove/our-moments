@@ -6,6 +6,7 @@ export interface User {
   nickname: string
   avatar: string
   bio: string
+  email?: string
   createTime: string
   updateTime: string
 }
@@ -119,7 +120,7 @@ export interface Comment {
 export interface AppNotification {
   notificationId: number
   userId: number
-  type: 'COMMENT' | 'FRIEND_REQUEST' | 'NEW_POST'
+  type: 'COMMENT' | 'FRIEND_REQUEST' | 'NEW_POST' | 'MESSAGE'
   content: string
   relatedId: number
   isRead: boolean

@@ -1,9 +1,12 @@
 package com.gravity.ourmoments.service.impl;
 
+import com.gravity.ourmoments.entity.Friendship;
 import com.gravity.ourmoments.entity.Notification;
 import com.gravity.ourmoments.entity.User;
+import com.gravity.ourmoments.mapper.FriendshipMapper;
 import com.gravity.ourmoments.mapper.NotificationMapper;
 import com.gravity.ourmoments.mapper.UserMapper;
+import com.gravity.ourmoments.service.EmailService;
 import com.gravity.ourmoments.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,6 +23,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private FriendshipMapper friendshipMapper;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -103,15 +112,46 @@ public class NotificationServiceImpl implements NotificationService {
         User author = userMapper.findById(authorId);
         String authorName = author != null ? author.getNickname() : "用户";
 
-        // 这里需要获取作者的所有好友，然后发送通知
-        // 为简化实现，这里只创建一个示例通知
-        // 实际实现中需要查询好友关系表获取好友列表
+        // 获取作者的所有好友（已接受状态的好友关系）
+        List<Friendship> friendships = friendshipMapper.findByUserIdAndStatus(authorId, "ACCEPTED");
+
+        for (Friendship friendship : friendships) {
+            // 获取好友的ID（可能是 userId 或 friendId）
+            Long friendUserId = friendship.getUserId().equals(authorId)
+                ? friendship.getFriendId()
+                : friendship.getUserId();
+
+            // 发送应用内通知
+            Notification notification = new Notification();
+            notification.setUserId(friendUserId);
+            notification.setType("NEW_POST");
+            notification.setContent(authorName + " 发布了新日志 \"" + postTitle + "\"");
+            notification.setRelatedId(postId);
+            createNotification(notification);
+
+            // 发送邮件通知
+            User friend = userMapper.findById(friendUserId);
+            if (friend != null && friend.getEmail() != null && !friend.getEmail().isEmpty()) {
+                emailService.sendNewPostNotification(friend.getEmail(), authorName, postTitle, postId);
+            }
+        }
+    }
+
+    @Override
+    public void sendMessageNotification(Long receiverId, Long senderId, Long messageId, String messageContent) {
+        User sender = userMapper.findById(senderId);
+        String senderName = sender != null ? sender.getNickname() : "用户";
+
+        // 截断消息内容用于通知显示
+        String shortContent = messageContent.length() > 50
+            ? messageContent.substring(0, 50) + "..."
+            : messageContent;
 
         Notification notification = new Notification();
-        notification.setUserId(authorId); // 为了演示，这里先给作者自己发一个通知
-        notification.setType("NEW_POST");
-        notification.setContent("你发布了新文章 \"" + postTitle + "\"");
-        notification.setRelatedId(postId);
+        notification.setUserId(receiverId);
+        notification.setType("MESSAGE");
+        notification.setContent(senderName + " 给你发送了私信: \"" + shortContent + "\"");
+        notification.setRelatedId(messageId);
         createNotification(notification);
     }
 }

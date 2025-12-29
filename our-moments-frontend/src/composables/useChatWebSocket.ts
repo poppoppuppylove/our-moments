@@ -2,6 +2,8 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import { useUserStore } from '@/store/user'
+import { useNotificationStore } from '@/store/notification'
+import type { AppNotification } from '@/types'
 
 // 类型定义
 interface ChatWebSocketConfig {
@@ -29,7 +31,7 @@ interface ChatWebSocketHook {
 
 // 默认配置
 const DEFAULT_CONFIG: ChatWebSocketConfig = {
-  url: '/ws',
+  url: import.meta.env.VITE_WS_BASE_URL || '/ws',
   reconnectDelay: 5000,
   heartbeatIncoming: 10000,
   heartbeatOutgoing: 10000
@@ -43,6 +45,7 @@ export function useChatWebSocket(config: ChatWebSocketConfig = DEFAULT_CONFIG): 
   const messages = ref<ChatMessage[]>([])
 
   const userStore = useUserStore()
+  const notificationStore = useNotificationStore()
 
   // 连接到WebSocket服务器
   const connect = () => {
@@ -55,9 +58,8 @@ export function useChatWebSocket(config: ChatWebSocketConfig = DEFAULT_CONFIG): 
     const token = localStorage.getItem('token')
 
     try {
-      // 创建STOMP客户端
+      // 创建STOMP客户端 - 使用 SockJS 以支持代理
       stompClient.value = new Client({
-        brokerURL: config.url,
         connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
         debug: function (str) {
           console.log('[Chat WebSocket]', str)
@@ -101,9 +103,16 @@ export function useChatWebSocket(config: ChatWebSocketConfig = DEFAULT_CONFIG): 
 
     // 订阅用户特定的消息频道
     if (userStore.user?.userId && stompClient.value) {
+      // 订阅聊天消息
       stompClient.value.subscribe(
         `/user/${userStore.user.userId}/queue/messages`,
         onMessageReceived
+      )
+
+      // 订阅通知
+      stompClient.value.subscribe(
+        `/user/${userStore.user.userId}/queue/notifications`,
+        onNotificationReceived
       )
     }
 
@@ -127,6 +136,18 @@ export function useChatWebSocket(config: ChatWebSocketConfig = DEFAULT_CONFIG): 
       messages.value.push(message)
     } catch (err) {
       console.error('Failed to parse chat message:', err)
+    }
+  }
+
+  // 通知接收回调
+  const onNotificationReceived = (payload: any) => {
+    try {
+      const notification: AppNotification = JSON.parse(payload.body)
+      console.log('Received notification via WebSocket:', notification)
+      // 添加到通知 store
+      notificationStore.addNotification(notification)
+    } catch (err) {
+      console.error('Failed to parse notification:', err)
     }
   }
 

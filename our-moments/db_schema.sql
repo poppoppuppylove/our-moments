@@ -16,6 +16,7 @@ CREATE TABLE `sys_user` (
   `nickname` varchar(64) DEFAULT NULL COMMENT '昵称',
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像地址(OSS)',
   `bio` varchar(255) DEFAULT NULL COMMENT '个人简介',
+  `email` varchar(100) DEFAULT NULL COMMENT '邮箱地址',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`user_id`),
@@ -235,3 +236,6 @@ CREATE TABLE IF NOT EXISTS sys_message (
     INDEX idx_receiver_time (receiver_id, create_time),
     INDEX idx_unread (receiver_id, is_read)
 );
+
+-- Add email column to sys_user if not exists
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱地址' AFTER `bio`;

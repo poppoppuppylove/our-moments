@@ -11,6 +11,7 @@ public class User {
     private String nickname;
     private String avatar;
     private String bio;
+    private String email;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
