@@ -144,17 +144,34 @@ const isAuthor = computed(() => {
 const articleBlocks = computed(() => {
   if (!post.value) return []
 
+  const content = post.value.content || ''
+  const mediaList = post.value.mediaList || []
+
+  // 检查内容中是否已经包含 <img> 标签（新格式）
+  const hasInlineImages = /<img\s+[^>]*src=/i.test(content)
+
+  if (hasInlineImages && mediaList.length > 0) {
+    // 新格式：解析 HTML 内容，按图片位置分割，保持图文顺序
+    return parseContentWithImages(content, mediaList)
+  }
+
+  // 旧格式或无图片：使用原来的逻辑
+  // 清理旧格式标记
+  const cleanedContent = content
+    .replace(/<img-src="[^"]*"\s*\/>/g, '')
+    .replace(/<img-src="[^"]*">.*?<\/img-src="[^"]*">/gs, '')
+    .replace(/<\/?img-src="[^"]*">/g, '')
+
   // 将内容按段落分割
-  const paragraphs = post.value.content.split('\n').filter(p => p.trim() !== '')
-  const mediaList = post.value.mediaList
+  const paragraphs = cleanedContent.split('\n').filter(p => p.trim() !== '')
 
   // 如果没有图片，直接返回段落
   if (mediaList.length === 0) {
-    return paragraphs.map(content => ({ type: 'text' as const, content }))
+    return paragraphs.map(c => ({ type: 'text' as const, content: c }))
   }
 
   // 创建包含文本和图片的块数组
-  const blocks = []
+  const blocks: Array<{type: 'text', content: string} | {type: 'image', media: BlogMedia}> = []
   const paragraphCount = paragraphs.length
   const mediaCount = mediaList.length
 
@@ -187,6 +204,153 @@ const articleBlocks = computed(() => {
 
   return blocks
 })
+
+// 解析包含内联图片的 HTML 内容，按顺序提取文字和图片块
+function parseContentWithImages(content: string, mediaList: BlogMedia[]) {
+  const blocks: Array<{type: 'text', content: string} | {type: 'image', media: BlogMedia}> = []
+
+  // 创建 URL 到 media 的映射
+  const urlToMedia = new Map<string, BlogMedia>()
+  mediaList.forEach(media => {
+    if (media.mediaUrl) {
+      urlToMedia.set(media.mediaUrl, media)
+      // 也添加不带查询参数的版本
+      const urlWithoutQuery = media.mediaUrl.split('?')[0]
+      if (urlWithoutQuery) {
+        urlToMedia.set(urlWithoutQuery, media)
+      }
+    }
+  })
+
+  // 使用临时 DOM 解析 HTML
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = content
+
+  // 遍历所有子节点，按顺序提取
+  function processNode(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim()
+      if (text) {
+        // 合并到上一个文本块或创建新的
+        const lastBlock = blocks[blocks.length - 1]
+        if (lastBlock && lastBlock.type === 'text') {
+          lastBlock.content += ' ' + text
+        } else {
+          blocks.push({ type: 'text' as const, content: text })
+        }
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement
+      const tagName = element.tagName.toLowerCase()
+
+      if (tagName === 'img') {
+        // 找到图片，从 mediaList 中匹配
+        const src = element.getAttribute('src') || ''
+        let media = urlToMedia.get(src)
+        if (!media) {
+          const srcWithoutQuery = src.split('?')[0]
+          media = urlToMedia.get(srcWithoutQuery || '')
+        }
+        // 通过包含关系查找
+        if (!media) {
+          for (const m of mediaList) {
+            if (m.mediaUrl && (src.includes(m.mediaUrl) || m.mediaUrl.includes(src))) {
+              media = m
+              break
+            }
+          }
+        }
+
+        if (media) {
+          blocks.push({ type: 'image' as const, media: media })
+        }
+      } else if (tagName === 'br') {
+        // 换行符，可以忽略或添加空格
+      } else {
+        // 其他元素，递归处理子节点
+        // 但先检查是否是块级元素，需要分隔文本
+        const isBlock = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li'].includes(tagName)
+
+        if (isBlock && element.textContent?.trim()) {
+          // 检查是否只包含图片
+          const hasOnlyImages = element.querySelectorAll('img').length > 0 &&
+                                element.textContent?.trim() === ''
+
+          if (!hasOnlyImages) {
+            // 提取纯文本内容（不包含图片标签）
+            const textContent = getTextWithoutImages(element)
+            if (textContent.trim()) {
+              blocks.push({ type: 'text' as const, content: textContent.trim() })
+            }
+          }
+
+          // 处理其中的图片
+          element.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src') || ''
+            let media = urlToMedia.get(src)
+            if (!media) {
+              const srcWithoutQuery = src.split('?')[0]
+              media = urlToMedia.get(srcWithoutQuery || '')
+            }
+            if (!media) {
+              for (const m of mediaList) {
+                if (m.mediaUrl && (src.includes(m.mediaUrl) || m.mediaUrl.includes(src))) {
+                  media = m
+                  break
+                }
+              }
+            }
+            if (media) {
+              blocks.push({ type: 'image' as const, media: media })
+            }
+          })
+        } else {
+          // 递归处理子节点
+          element.childNodes.forEach(child => processNode(child))
+        }
+      }
+    }
+  }
+
+  // 获取元素的纯文本内容（排除图片）
+  function getTextWithoutImages(element: HTMLElement): string {
+    let text = ''
+    element.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.textContent || ''
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement
+        if (el.tagName.toLowerCase() !== 'img') {
+          text += getTextWithoutImages(el)
+        }
+      }
+    })
+    return text
+  }
+
+  // 开始处理
+  tempDiv.childNodes.forEach(node => processNode(node))
+
+  // 清理：合并相邻的文本块，移除空块
+  const cleanedBlocks: typeof blocks = []
+  blocks.forEach(block => {
+    if (block.type === 'text') {
+      const content = block.content.trim()
+      if (content) {
+        const lastBlock = cleanedBlocks[cleanedBlocks.length - 1]
+        if (lastBlock && lastBlock.type === 'text') {
+          lastBlock.content += '\n' + content
+        } else {
+          cleanedBlocks.push({ type: 'text', content })
+        }
+      }
+    } else {
+      cleanedBlocks.push(block)
+    }
+  })
+
+  return cleanedBlocks
+}
 
 async function loadPost() {
   const postId = Number(route.params.id)
@@ -253,8 +417,9 @@ function formatDate(dateString: string): string {
 
 
 function formatParagraph(content: string): string {
-  // 保持段落原样，不添加额外的换行
-  return content
+  // 内容已经经过 parseContentWithImages 处理，不需要额外处理
+  // 只需要确保换行符正确显示
+  return content.replace(/\n/g, '<br>')
 }
 
 function getMediaStyle(media: BlogMedia, index: number) {

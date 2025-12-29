@@ -269,98 +269,167 @@ function populateForm(post: any) {
     console.log('编辑模式 - 原始内容:', content)
     console.log('编辑模式 - 媒体列表:', post.mediaList)
 
-    // 重建图片映射并替换图片标记
+    // 使用临时 div 解析内容
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = content
+
+    // 获取内容中所有现有的图片
+    const existingImgs = tempDiv.querySelectorAll('img')
+    const processedUrls = new Set<string>()
+
+    // 重建图片映射，并为现有图片添加必要属性
     if (post.mediaList && post.mediaList.length > 0) {
-      // 创建一个 Set 来追踪已处理的图片
-      const processedImages = new Set<string>()
-
+      // 先建立 URL 到 media 的映射
+      const urlToMedia = new Map<string, BlogMedia>()
       post.mediaList.forEach((media: BlogMedia) => {
-        const imgId = `img_${media.mediaId}`
-        inlineImages.value.set(imgId, media)
-
-        console.log('处理媒体:', imgId, media.mediaUrl)
-
-        // 尝试替换自定义图片标记格式 <img-src="img_xxx"/>
-        const customTagPattern = `<img-src="${imgId}"\\s*/>`
-        const customTagRegex = new RegExp(customTagPattern, 'g')
-        if (content.includes(`<img-src="${imgId}"`)) {
-          content = content.replace(
-            customTagRegex,
-            `<img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/>`
-          )
-          processedImages.add(imgId)
-          console.log('替换了自定义标记:', imgId)
-        }
-
-        // 如果内容中已经有实际的 img 标签但没有 data-id，添加 data-id
-        const escapedUrl = media.mediaUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const imgRegex = new RegExp(`<img[^>]*src=["']${escapedUrl}["'][^>]*>`, 'g')
-        const imgMatches = content.match(imgRegex)
-        if (imgMatches) {
-          content = content.replace(imgRegex, (match: string) => {
-            processedImages.add(imgId)
-            // 如果已经有 data-id，跳过
-            if (match.includes('data-id')) {
-              return match
-            }
-            // 添加 data-id 和样式
-            return match.replace('<img', `<img data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"`)
-          })
-          console.log('更新了现有图片标签:', imgId)
+        if (media.mediaUrl) {
+          urlToMedia.set(media.mediaUrl, media)
+          // 也添加不带查询参数的版本
+          const urlWithoutQuery = media.mediaUrl.split('?')[0]
+          if (urlWithoutQuery) {
+            urlToMedia.set(urlWithoutQuery, media)
+          }
         }
       })
 
-      // 如果有媒体没有在内容中找到对应的图片，在内容末尾添加
-      post.mediaList.forEach((media: BlogMedia) => {
-        const imgId = `img_${media.mediaId}`
-        // 检查内容中是否包含这个图片的 URL 或 data-id
-        if (!content.includes(media.mediaUrl) && !content.includes(`data-id="${imgId}"`)) {
-          content += `<p><img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/></p>`
-          console.log('在末尾添加图片:', imgId)
+      // 处理内容中已存在的图片
+      existingImgs.forEach(img => {
+        const src = img.getAttribute('src')
+        if (!src) return
+
+        // 尝试匹配媒体（完整URL或去掉查询参数后匹配）
+        let matchingMedia = urlToMedia.get(src)
+        if (!matchingMedia) {
+          const srcWithoutQuery = src.split('?')[0]
+          if (srcWithoutQuery) {
+            matchingMedia = urlToMedia.get(srcWithoutQuery)
+          }
         }
+
+        // 也可以通过 URL 包含关系匹配
+        if (!matchingMedia) {
+          for (const media of post.mediaList) {
+            if (src.includes(media.mediaUrl) || media.mediaUrl.includes(src) ||
+                src.split('?')[0] === media.mediaUrl.split('?')[0]) {
+              matchingMedia = media
+              break
+            }
+          }
+        }
+
+        if (matchingMedia) {
+          const imgId = `img_${matchingMedia.mediaId}`
+          inlineImages.value.set(imgId, matchingMedia)
+
+          // 记录已处理的 URL
+          processedUrls.add(matchingMedia.mediaUrl)
+          processedUrls.add(src)
+
+          // 设置 data-id 和样式
+          img.setAttribute('data-id', imgId)
+          img.classList.add('inline-image')
+          img.setAttribute('style', 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;')
+
+          console.log('匹配并更新图片:', imgId, src)
+        } else {
+          // 内容中有图片但不在 mediaList 中，可能是用户新添加的或其他来源
+          // 仍然添加样式
+          img.classList.add('inline-image')
+          img.setAttribute('style', 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;')
+          console.log('发现未匹配的图片:', src)
+        }
+      })
+
+      // 检查是否有 mediaList 中的图片完全不在内容中
+      // 只有当内容中完全没有该图片时才添加
+      post.mediaList.forEach((media: BlogMedia) => {
+        if (!processedUrls.has(media.mediaUrl)) {
+          // 再次确认内容中真的没有这个图片
+          const contentHasImage = Array.from(existingImgs).some(img => {
+            const src = img.getAttribute('src') || ''
+            return src === media.mediaUrl ||
+                   src.split('?')[0] === media.mediaUrl.split('?')[0] ||
+                   src.includes(media.mediaUrl) ||
+                   media.mediaUrl.includes(src)
+          })
+
+          if (!contentHasImage) {
+            const imgId = `img_${media.mediaId}`
+            inlineImages.value.set(imgId, media)
+            const p = document.createElement('p')
+            p.innerHTML = `<img src="${media.mediaUrl}" data-id="${imgId}" class="inline-image" style="max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;"/>`
+            tempDiv.appendChild(p)
+            console.log('在末尾添加缺失的图片:', imgId)
+          }
+        }
+      })
+    } else {
+      // 没有 mediaList，但内容中可能有图片，添加样式
+      existingImgs.forEach(img => {
+        img.classList.add('inline-image')
+        img.setAttribute('style', 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;')
       })
     }
 
+    content = tempDiv.innerHTML
     console.log('编辑模式 - 处理后内容:', content)
 
     editorContent.value.innerHTML = content
 
-    // 为已存在的图片添加删除事件
-    const images = editorContent.value.querySelectorAll('img')
-    images.forEach((img) => {
-      const imgElement = img as HTMLImageElement
-
-      // 确保所有图片都有正确的样式
-      imgElement.classList.add('inline-image')
-      imgElement.style.cssText = 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;'
-
-      imgElement.addEventListener('dblclick', () => {
-        confirmDeleteImage(imgElement)
-      })
-
-      let touchTimer: ReturnType<typeof setTimeout> | null = null
-      imgElement.addEventListener('touchstart', (e) => {
-        touchTimer = setTimeout(() => {
-          e.preventDefault()
-          confirmDeleteImage(imgElement)
-        }, 600)
-      }, { passive: false })
-
-      imgElement.addEventListener('touchend', () => {
-        if (touchTimer) {
-          clearTimeout(touchTimer)
-          touchTimer = null
-        }
-      })
-
-      imgElement.addEventListener('touchmove', () => {
-        if (touchTimer) {
-          clearTimeout(touchTimer)
-          touchTimer = null
-        }
-      })
-    })
+    // 为所有图片添加删除事件和样式
+    setupImageEventHandlers()
   }
+}
+
+// 为编辑器中的图片设置事件处理器
+function setupImageEventHandlers() {
+  if (!editorContent.value) return
+
+  const images = editorContent.value.querySelectorAll('img')
+  images.forEach((img) => {
+    const imgElement = img as HTMLImageElement
+
+    // 确保所有图片都有正确的样式
+    imgElement.classList.add('inline-image')
+    imgElement.style.cssText = 'max-width: 250px; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;'
+
+    // 如果图片没有 data-id，尝试从 mediaList 匹配
+    if (!imgElement.getAttribute('data-id')) {
+      const src = imgElement.getAttribute('src')
+      if (src) {
+        const matchingMedia = form.mediaList.find(m => m.mediaUrl === src)
+        if (matchingMedia) {
+          imgElement.setAttribute('data-id', `img_${matchingMedia.mediaId}`)
+        }
+      }
+    }
+
+    imgElement.addEventListener('dblclick', () => {
+      confirmDeleteImage(imgElement)
+    })
+
+    let touchTimer: ReturnType<typeof setTimeout> | null = null
+    imgElement.addEventListener('touchstart', (e) => {
+      touchTimer = setTimeout(() => {
+        e.preventDefault()
+        confirmDeleteImage(imgElement)
+      }, 600)
+    }, { passive: false })
+
+    imgElement.addEventListener('touchend', () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer)
+        touchTimer = null
+      }
+    })
+
+    imgElement.addEventListener('touchmove', () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer)
+        touchTimer = null
+      }
+    })
+  })
 }
 
 // 富文本编辑器相关函数
@@ -518,19 +587,57 @@ function insertParagraph() {
 function updateContent() {
   if (!editorContent.value) return
 
-  // 获取纯文本内容用于后端保存
-  let content = editorContent.value.innerHTML
+  // 获取编辑器中当前存在的所有图片
+  const existingImages = editorContent.value.querySelectorAll('.inline-image')
+  const existingImageIds = new Set<string>()
 
-  // 替换图片标签为特殊标记，后端可以识别和解析
-  const images = editorContent.value.querySelectorAll('.inline-image')
-  images.forEach(img => {
+  // 收集当前编辑器中存在的图片 ID
+  existingImages.forEach(img => {
     const imgId = img.getAttribute('data-id')
     if (imgId) {
-      content = content.replace(img.outerHTML, `<img-src="${imgId}"/>`)
+      existingImageIds.add(imgId)
     }
   })
 
-  form.content = content
+  // 同步 mediaList - 只保留编辑器中实际存在的图片
+  form.mediaList = form.mediaList.filter(media => {
+    const imgId = `img_${media.mediaId}`
+    return existingImageIds.has(imgId)
+  })
+
+  // 同步 inlineImages Map
+  const idsToRemove: string[] = []
+  inlineImages.value.forEach((_, imgId) => {
+    if (!existingImageIds.has(imgId)) {
+      idsToRemove.push(imgId)
+    }
+  })
+  idsToRemove.forEach(id => inlineImages.value.delete(id))
+
+  // 直接保存 HTML 内容（保持图片和文字的顺序）
+  // 不再将图片替换为标记，直接保存带有图片 URL 的 HTML
+  let content = editorContent.value.innerHTML
+
+  // 清理内联图片的额外属性，只保留必要的属性
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = content
+
+  const imgs = tempDiv.querySelectorAll('img')
+  imgs.forEach(img => {
+    // 保留 src 和基本样式
+    const src = img.getAttribute('src')
+    const dataId = img.getAttribute('data-id')
+    if (src) {
+      // 创建一个干净的图片标签
+      img.setAttribute('style', 'max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0;')
+      img.removeAttribute('class')
+      if (dataId) {
+        img.setAttribute('data-id', dataId)
+      }
+    }
+  })
+
+  form.content = tempDiv.innerHTML
 }
 
 // 标签管理
