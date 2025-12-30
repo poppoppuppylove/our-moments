@@ -17,6 +17,7 @@ CREATE TABLE `sys_user` (
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像地址(OSS)',
   `bio` varchar(255) DEFAULT NULL COMMENT '个人简介',
   `email` varchar(100) DEFAULT NULL COMMENT '邮箱地址',
+  `role` varchar(20) DEFAULT 'USER' COMMENT '用户角色 (USER, ADMIN)',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`user_id`),
@@ -239,3 +240,12 @@ CREATE TABLE IF NOT EXISTS sys_message (
 
 -- Add email column to sys_user if not exists
 ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱地址' AFTER `bio`;
+
+-- Add role column to sys_user if not exists
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS `role` VARCHAR(20) DEFAULT 'USER' COMMENT '用户角色 (USER, ADMIN)' AFTER `email`;
+
+-- Create super admin account (password: admin123)
+-- Using plain text password since NoOpPasswordEncoder is used
+INSERT INTO sys_user (username, password, nickname, avatar, bio, email, role, create_time, update_time)
+VALUES ('superadmin', 'admin123', '超级管理员', 'https://api.dicebear.com/7.x/adventurer/svg?seed=superadmin', '系统超级管理员', 'admin@ourmoments.com', 'ADMIN', NOW(), NOW())
+ON DUPLICATE KEY UPDATE role = 'ADMIN';

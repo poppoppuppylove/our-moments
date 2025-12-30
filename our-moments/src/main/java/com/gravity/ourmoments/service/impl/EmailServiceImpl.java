@@ -24,7 +24,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.email.enabled:false}")
     private boolean emailEnabled;
 
-    @Value("${app.base-url:http://localhost:5173}")
+    @Value("${app.base-url:http://47.100.253.251}")
     private String baseUrl;
 
     @Override

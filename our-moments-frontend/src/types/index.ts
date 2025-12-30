@@ -7,6 +7,7 @@ export interface User {
   avatar: string
   bio: string
   email?: string
+  role?: 'USER' | 'ADMIN'
   createTime: string
   updateTime: string
 }

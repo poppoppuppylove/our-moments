@@ -84,7 +84,7 @@ public class BlogPostController {
             }
         }
 
-        // Verify the user owns the post before allowing update
+        // Verify the user owns the post or is admin before allowing update
         Long currentUserId = getCurrentUserId();
         BlogPost existingPost = blogPostService.getPostById(id);
 
@@ -92,7 +92,7 @@ public class BlogPostController {
             return ResponseEntity.notFound().build();
         }
 
-        if (!existingPost.getUserId().equals(currentUserId)) {
+        if (!existingPost.getUserId().equals(currentUserId) && !isCurrentUserAdmin()) {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
@@ -102,7 +102,7 @@ public class BlogPostController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id) {
-        // Verify the user owns the post before allowing deletion
+        // Verify the user owns the post or is admin before allowing deletion
         Long currentUserId = getCurrentUserId();
         BlogPost existingPost = blogPostService.getPostById(id);
 
@@ -110,7 +110,7 @@ public class BlogPostController {
             return ResponseEntity.notFound().build();
         }
 
-        if (!existingPost.getUserId().equals(currentUserId)) {
+        if (!existingPost.getUserId().equals(currentUserId) && !isCurrentUserAdmin()) {
             return ResponseEntity.status(403).build(); // Forbidden
         }
 
@@ -136,5 +136,24 @@ public class BlogPostController {
         }
 
         return null;
+    }
+
+    /**
+     * Check if the current user is an admin
+     * @return true if admin, false otherwise
+     */
+    private boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() ||
+            "anonymousUser".equals(authentication.getPrincipal())) {
+            return false;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).isAdmin();
+        }
+
+        return false;
     }
 }

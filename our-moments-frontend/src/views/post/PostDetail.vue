@@ -7,8 +7,8 @@
           ← 返回
         </HandButton>
         <div class="post-detail__action-right">
-          <!-- 作者操作按钮 -->
-          <template v-if="isAuthor">
+          <!-- 作者或管理员操作按钮 -->
+          <template v-if="canManagePost">
             <HandButton variant="outline" size="sm" @click="editPost">
               编辑
             </HandButton>
@@ -138,6 +138,12 @@ const error = ref(false)
 const isAuthor = computed(() => {
   if (!post.value || !userStore.user) return false
   return post.value.userId === userStore.user.userId
+})
+
+// 判断当前用户是否可以管理帖子（作者或管理员）
+const canManagePost = computed(() => {
+  if (!post.value || !userStore.user) return false
+  return isAuthor.value || userStore.isAdmin
 })
 
 // 计算属性：将文章内容和图片交错排列

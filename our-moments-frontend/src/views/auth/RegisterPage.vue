@@ -10,18 +10,26 @@
         <form @submit.prevent="handleRegister" class="register-form">
           <HandInput
             v-model="form.username"
-            label="用户名"
-            placeholder="请输入用户名"
+            label="登录账号"
+            placeholder="请输入登录账号（英文或数字）"
             :error="errors.username"
             required
           />
 
           <HandInput
             v-model="form.nickname"
-            label="昵称"
-            placeholder="请输入昵称"
+            label="显示昵称"
+            placeholder="请输入昵称（其他用户看到的名字）"
             :error="errors.nickname"
             required
+          />
+
+          <HandInput
+            v-model="form.email"
+            type="email"
+            label="邮箱地址"
+            placeholder="请输入邮箱（用于接收好友动态通知）"
+            :error="errors.email"
           />
 
           <HandInput
@@ -83,6 +91,7 @@ const loading = ref(false)
 const form = reactive({
   username: '',
   nickname: '',
+  email: '',
   password: '',
   confirmPassword: ''
 })
@@ -90,6 +99,7 @@ const form = reactive({
 const errors = reactive({
   username: '',
   nickname: '',
+  email: '',
   password: '',
   confirmPassword: ''
 })
@@ -98,19 +108,28 @@ function validate(): boolean {
   let isValid = true
   errors.username = ''
   errors.nickname = ''
+  errors.email = ''
   errors.password = ''
   errors.confirmPassword = ''
 
   if (!form.username.trim()) {
-    errors.username = '请输入用户名'
+    errors.username = '请输入登录账号'
     isValid = false
   } else if (form.username.length < 3) {
-    errors.username = '用户名长度不能少于3位'
+    errors.username = '登录账号长度不能少于3位'
+    isValid = false
+  } else if (!/^[a-zA-Z0-9_]+$/.test(form.username)) {
+    errors.username = '登录账号只能包含英文、数字和下划线'
     isValid = false
   }
 
   if (!form.nickname.trim()) {
     errors.nickname = '请输入昵称'
+    isValid = false
+  }
+
+  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    errors.email = '请输入有效的邮箱地址'
     isValid = false
   }
 
@@ -140,6 +159,7 @@ async function handleRegister() {
     const userData: Partial<User> = {
       username: form.username,
       nickname: form.nickname,
+      email: form.email || undefined,
       password: form.password,
       avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${form.username}`,
       bio: ''

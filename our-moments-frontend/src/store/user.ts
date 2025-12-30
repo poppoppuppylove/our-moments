@@ -11,6 +11,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
   const username = computed(() => user.value?.username || '')
   const nickname = computed(() => user.value?.nickname || user.value?.username || '访客')
+  const isAdmin = computed(() => user.value?.role === 'ADMIN')
 
   // 方法
   function setUser(userData: User) {
@@ -36,6 +37,7 @@ export const useUserStore = defineStore('user', () => {
     user,
     token,
     isLoggedIn,
+    isAdmin,
     username,
     nickname,
     setUser,

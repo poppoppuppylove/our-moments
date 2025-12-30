@@ -19,6 +19,15 @@
             <span class="comment-author">{{ comment.author.nickname }}</span>
             <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
           </div>
+          <!-- 删除按钮：评论作者或管理员可见 -->
+          <button
+            v-if="canDeleteComment(comment)"
+            class="comment-delete-btn"
+            @click="confirmDeleteComment(comment)"
+            title="删除评论"
+          >
+            ×
+          </button>
         </div>
         <div class="comment-content">
           {{ comment.content }}
@@ -158,6 +167,26 @@ function formatTime(timeString: string): string {
   }
 }
 
+// 判断是否可以删除评论（评论作者或管理员）
+function canDeleteComment(comment: Comment): boolean {
+  if (!userStore.user) return false
+  return comment.userId === userStore.user.userId || userStore.isAdmin
+}
+
+// 确认删除评论
+async function confirmDeleteComment(comment: Comment) {
+  if (!confirm('确定要删除这条评论吗？')) return
+
+  try {
+    await commentApi.deleteComment(comment.commentId)
+    toast.success('评论已删除')
+    await loadComments()
+  } catch (error) {
+    console.error('Failed to delete comment:', error)
+    toast.error('删除评论失败，请稍后重试')
+  }
+}
+
 function goToLogin() {
   router.push('/login')
 }
@@ -215,6 +244,28 @@ defineExpose({
 .comment-author-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+}
+
+.comment-delete-btn {
+  background: none;
+  border: none;
+  color: var(--color-ink-light);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+
+  &:hover {
+    color: #c44;
+    background: rgba(204, 68, 68, 0.1);
+  }
+}
+
+.comment-item:hover .comment-delete-btn {
+  opacity: 1;
 }
 
 .comment-author {

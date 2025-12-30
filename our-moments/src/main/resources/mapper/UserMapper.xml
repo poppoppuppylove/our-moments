@@ -9,6 +9,8 @@
         <result property="nickname" column="nickname"/>
         <result property="avatar" column="avatar"/>
         <result property="bio" column="bio"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
@@ -22,8 +24,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
-        INSERT INTO sys_user (username, password, nickname, avatar, bio, create_time, update_time)
-        VALUES (#{username}, #{password}, #{nickname}, #{avatar}, #{bio}, NOW(), NOW())
+        INSERT INTO sys_user (username, password, nickname, avatar, bio, email, role, create_time, update_time)
+        VALUES (#{username}, #{password}, #{nickname}, #{avatar}, #{bio}, #{email}, COALESCE(#{role}, 'USER'), NOW(), NOW())
     </insert>
 
     <update id="update">
@@ -32,6 +34,7 @@
             <if test="nickname != null">nickname = #{nickname},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
             <if test="bio != null">bio = #{bio},</if>
+            <if test="email != null">email = #{email},</if>
             update_time = NOW()
         </set>
         WHERE user_id = #{userId}
