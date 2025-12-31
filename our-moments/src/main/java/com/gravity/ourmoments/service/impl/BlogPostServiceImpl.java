@@ -164,40 +164,42 @@ public class BlogPostServiceImpl implements BlogPostService {
     }
 
     private List<BlogPost> filterVisiblePosts(List<BlogPost> posts, Long currentUserId) {
-        if (currentUserId == null) {
-            // Not logged in - only show public posts
-            return posts.stream()
-                    .filter(post -> "PUBLIC".equals(post.getVisibility()))
-                    .collect(java.util.stream.Collectors.toList());
-        }
-
         return posts.stream()
                 .filter(post -> isVisibleToUser(post, currentUserId))
                 .collect(java.util.stream.Collectors.toList());
     }
 
     private boolean isVisibleToUser(BlogPost post, Long currentUserId) {
-        // Author can always see their own posts
-        if (post.getUserId().equals(currentUserId)) {
-            return true;
+        String visibility = post.getVisibility();
+
+        // Handle null or empty visibility - treat as PUBLIC for backwards compatibility
+        if (visibility == null || visibility.isEmpty()) {
+            visibility = "PUBLIC";
         }
 
         // Public posts are visible to everyone
-        if ("PUBLIC".equals(post.getVisibility())) {
+        if ("PUBLIC".equalsIgnoreCase(visibility)) {
             return true;
         }
 
-        // Private posts are only visible to the author (already checked above)
-        if ("PRIVATE".equals(post.getVisibility())) {
-            return false;
+        // Private posts are only visible to the author
+        if ("PRIVATE".equalsIgnoreCase(visibility)) {
+            return currentUserId != null && post.getUserId().equals(currentUserId);
         }
 
-        // Friends-only posts are visible to friends
-        if ("FRIENDS".equals(post.getVisibility())) {
+        // Friends-only posts are visible to author and friends
+        if ("FRIENDS".equalsIgnoreCase(visibility)) {
+            if (currentUserId == null) {
+                return false;
+            }
+            // Author can always see their own posts
+            if (post.getUserId().equals(currentUserId)) {
+                return true;
+            }
             return friendshipService.areFriends(post.getUserId(), currentUserId);
         }
 
-        // Default to not visible
+        // Default to not visible for unknown visibility values
         return false;
     }
 }
