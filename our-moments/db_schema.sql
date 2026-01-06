@@ -65,7 +65,7 @@ CREATE TABLE `blog_post` (
   `status` tinyint(4) DEFAULT '1' COMMENT '状态(0:草稿 1:发布)',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `visibility` varchar(20) DEFAULT 'PUBLIC',
+  `visibility` varchar(20) DEFAULT 'PUBLIC' COMMENT '可见性 (PUBLIC, FRIENDS, PRIVATE, PARTNER)',
   PRIMARY KEY (`post_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_category_id` (`category_id`)

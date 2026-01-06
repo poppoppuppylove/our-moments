@@ -1,11 +1,14 @@
 <template>
-  <PaperTexture variant="light" class="min-h-screen">
+  <PaperTexture variant="light" class="min-h-screen chat-wrapper">
     <div class="chat-page">
       <!-- 聊天头部 -->
       <HandCard variant="paper" class="chat-header">
         <div class="header-content">
           <HandButton variant="ghost" size="sm" @click="goBack" class="back-button">
-            <i class="icon-arrow-left"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
           </HandButton>
           <div v-if="currentFriend" class="friend-info">
             <img :src="currentFriend.avatar" :alt="currentFriend.nickname" class="friend-avatar" />
@@ -251,14 +254,18 @@ onMounted(() => {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  height: calc(100vh - 40px);
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1001; /* 确保聊天页面在其他元素之上 */
 }
 
 .chat-header {
   padding: 16px 20px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .header-content {
@@ -313,7 +320,8 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  min-height: 0; /* 关键：允许flex子项收缩 */
+  overflow: hidden;
 }
 
 .messages-container {
@@ -323,6 +331,7 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.7);
   border-radius: 16px;
   border: 1px solid rgba(168, 140, 190, 0.2);
+  min-height: 0; /* 关键：允许flex子项收缩 */
 }
 
 .loading-messages,
@@ -393,7 +402,9 @@ onMounted(() => {
 }
 
 .input-container {
-  padding: 20px;
+  padding: 16px 20px;
+  flex-shrink: 0;
+  margin-top: 16px;
 }
 
 .input-wrapper {
@@ -456,12 +467,14 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .chat-page {
-    padding: 16px 12px;
-    height: calc(100vh - 32px);
+    padding: 12px;
+    height: 100vh;
+    height: 100dvh; /* 使用动态视口高度，处理移动端地址栏 */
   }
 
   .chat-header {
     padding: 12px 16px;
+    margin-bottom: 12px;
   }
 
   .friend-info {
@@ -478,7 +491,7 @@ onMounted(() => {
   }
 
   .messages-container {
-    padding: 16px 12px;
+    padding: 12px;
   }
 
   .message-item {
@@ -486,7 +499,8 @@ onMounted(() => {
   }
 
   .input-container {
-    padding: 16px;
+    padding: 12px 16px;
+    margin-top: 12px;
   }
 
   .input-wrapper {

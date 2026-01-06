@@ -1,8 +1,10 @@
 package com.gravity.ourmoments.service.impl;
 
+import com.gravity.ourmoments.entity.BlogPost;
 import com.gravity.ourmoments.entity.Friendship;
 import com.gravity.ourmoments.entity.Notification;
 import com.gravity.ourmoments.entity.User;
+import com.gravity.ourmoments.mapper.BlogPostMapper;
 import com.gravity.ourmoments.mapper.FriendshipMapper;
 import com.gravity.ourmoments.mapper.NotificationMapper;
 import com.gravity.ourmoments.mapper.UserMapper;
@@ -26,6 +28,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private FriendshipMapper friendshipMapper;
+
+    @Autowired
+    private BlogPostMapper blogPostMapper;
 
     @Autowired
     private EmailService emailService;
@@ -77,7 +82,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendCommentNotification(Long postAuthorId, Long commenterId, Long commentId, String postTitle) {
+    public void sendCommentNotification(Long postAuthorId, Long commenterId, Long postId, Long commentId, String postTitle) {
         // 不要给自己发通知
         if (postAuthorId.equals(commenterId)) {
             return;
@@ -90,7 +95,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setUserId(postAuthorId);
         notification.setType("COMMENT");
         notification.setContent(commenterName + " 评论了你的文章 \"" + postTitle + "\"");
-        notification.setRelatedId(commentId);
+        notification.setRelatedId(postId); // 使用 postId 而不是 commentId，方便跳转到帖子
         createNotification(notification);
     }
 
@@ -112,7 +117,33 @@ public class NotificationServiceImpl implements NotificationService {
         User author = userMapper.findById(authorId);
         String authorName = author != null ? author.getNickname() : "用户";
 
-        // 获取作者的所有好友（已接受状态的好友关系）
+        // PARTNER 权限特殊处理：只通知对方用户（仅限用户1和100）
+        if ((authorId == 1L || authorId == 100L)) {
+            // 查询帖子来检查可见性
+            BlogPost post = getPostByIdFromSomewhere(postId);
+            if (post != null && "PARTNER".equalsIgnoreCase(post.getVisibility())) {
+                // 只通知对方用户
+                Long partnerId = (authorId == 1L) ? 100L : 1L;
+
+                // 发送应用内通知给对方
+                Notification notification = new Notification();
+                notification.setUserId(partnerId);
+                notification.setType("NEW_POST");
+                notification.setContent(authorName + " 发布了新日志 \"" + postTitle + "\"");
+                notification.setRelatedId(postId);
+                createNotification(notification);
+
+                // 发送邮件通知给对方
+                User partner = userMapper.findById(partnerId);
+                if (partner != null && partner.getEmail() != null && !partner.getEmail().isEmpty()) {
+                    emailService.sendNewPostNotification(partner.getEmail(), authorName, postTitle, postId);
+                }
+
+                return; // PARTNER帖子处理完毕，直接返回
+            }
+        }
+
+        // 普通情况：向所有好友发送通知
         List<Friendship> friendships = friendshipMapper.findByUserIdAndStatus(authorId, "ACCEPTED");
 
         for (Friendship friendship : friendships) {
@@ -135,6 +166,14 @@ public class NotificationServiceImpl implements NotificationService {
                 emailService.sendNewPostNotification(friend.getEmail(), authorName, postTitle, postId);
             }
         }
+    }
+
+    // 辅助方法：通过 postId 获取帖子
+    private BlogPost getPostByIdFromSomewhere(Long postId) {
+        if (blogPostMapper != null && postId != null) {
+            return blogPostMapper.findById(postId);
+        }
+        return null;
     }
 
     @Override

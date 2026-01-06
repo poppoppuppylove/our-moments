@@ -13,7 +13,7 @@ public interface NotificationService {
     void deleteNotification(Long notificationId);
 
     // 业务方法
-    void sendCommentNotification(Long postAuthorId, Long commenterId, Long commentId, String postTitle);
+    void sendCommentNotification(Long postAuthorId, Long commenterId, Long postId, Long commentId, String postTitle);
     void sendFriendRequestNotification(Long recipientId, Long requesterId, Long friendshipId);
     void sendNewPostNotificationToFriends(Long authorId, Long postId, String postTitle);
     void sendMessageNotification(Long receiverId, Long senderId, Long messageId, String messageContent);

@@ -66,6 +66,10 @@ public class BlogPostController {
         if (post.getVisibility() == null || post.getVisibility().isEmpty()) {
             post.setVisibility("PUBLIC");
         }
+        // Normalize visibility values to uppercase
+        if (post.getVisibility() != null) {
+            post.setVisibility(post.getVisibility().toUpperCase());
+        }
 
         BlogPost savedPost = blogPostService.createPost(post);
         return ResponseEntity.created(URI.create("/api/posts/" + savedPost.getPostId())).body(savedPost);

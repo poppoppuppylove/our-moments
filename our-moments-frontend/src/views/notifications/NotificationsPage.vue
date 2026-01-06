@@ -1,11 +1,19 @@
 <template>
-  <PaperTexture variant="light" class="min-h-screen">
+  <PaperTexture variant="light" class="min-h-screen notifications-wrapper">
     <div class="notifications-page">
       <HandCard variant="paper" class="notifications-card">
         <Pin variant="blue" position="top" />
 
         <header class="notifications-header">
-          <h1 class="notifications-title">通知中心</h1>
+          <div class="header-left">
+            <HandButton variant="ghost" size="sm" @click="goBack" class="back-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </HandButton>
+            <h1 class="notifications-title">通知中心</h1>
+          </div>
           <div class="header-actions">
             <HandButton
               v-if="notificationStore.unreadCount > 0"
@@ -102,6 +110,11 @@ function handleNotificationClick(notification: any) {
   }
 }
 
+// 返回上一页
+function goBack() {
+  router.back()
+}
+
 // 组件挂载时加载通知
 onMounted(() => {
   notificationStore.loadNotifications()
@@ -109,10 +122,22 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.notifications-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999; /* 确保整个通知页面固定在所有元素之上 */
+  overflow-y: auto;
+}
+
 .notifications-page {
   max-width: 800px;
   margin: 0 auto;
   padding: 40px 20px;
+  position: relative;
+  z-index: 10000; /* 确保通知页面内容在其之上 */
 }
 
 .notifications-card {
@@ -124,6 +149,16 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-button {
+  min-width: 40px;
 }
 
 .notifications-title {

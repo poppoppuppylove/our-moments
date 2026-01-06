@@ -151,20 +151,18 @@
           <div class="form-section">
             <label>可见性</label>
             <div class="visibility-options">
-              <label class="visibility-option">
-                <input type="radio" v-model="form.visibility" value="public" />
-                <span class="visibility-label">公开</span>
-                <span class="visibility-desc">所有人可见</span>
-              </label>
-              <label class="visibility-option">
-                <input type="radio" v-model="form.visibility" value="friends" />
-                <span class="visibility-label">好友可见</span>
-                <span class="visibility-desc">仅好友可见</span>
-              </label>
-              <label class="visibility-option">
-                <input type="radio" v-model="form.visibility" value="private" />
-                <span class="visibility-label">私密</span>
-                <span class="visibility-desc">仅自己可见</span>
+              <label
+                v-for="option in visibilityOptions"
+                :key="option.value"
+                class="visibility-option"
+              >
+                <input
+                  type="radio"
+                  v-model="form.visibility"
+                  :value="option.value"
+                />
+                <span class="visibility-label">{{ option.label }}</span>
+                <span class="visibility-desc">{{ option.desc }}</span>
               </label>
             </div>
           </div>
@@ -196,6 +194,26 @@ const userStore = useUserStore()
 const isEdit = computed(() => route.name === 'PostUserEdit' && !!route.params.id)
 const loading = ref(false)
 const saving = ref(false)
+
+// 特殊用户：只能看到这个权限的是用户1和100的用户
+const isSpecialUser = computed(() => {
+  const userId = userStore.user?.userId
+  return userId === 1 || userId === 100
+})
+
+// 可见性选项
+const visibilityOptions = computed(() => {
+  const options = [
+    { value: 'public', label: '公开', desc: '所有人可见' },
+    { value: 'friends', label: '好友可见', desc: '仅好友可见' },
+    { value: 'private', label: '私密', desc: '仅自己可见' }
+  ]
+  // 只有用户1和100可以看到PARTNER选项
+  if (isSpecialUser.value) {
+    options.push({ value: 'partner', label: '仅TA可见', desc: '仅对ta可见' })
+  }
+  return options
+})
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const tagInput = ref('')

@@ -169,15 +169,19 @@ async function onAvatarFileChange(e: Event) {
 
   try {
     // 上传头像到 OSS
-    const response = await fileApi.uploadAvatar(file)
-    if (response.success && response.url) {
-      form.avatar = response.url
+    const response = await fileApi.uploadAvatar(file) as any
+    // 处理不同的响应格式
+    const url = response?.url || response?.data?.url
+    if (url) {
+      form.avatar = url
+      toast.success('头像上传成功')
     } else {
-      toast.error('头像上传失败')
+      console.error('Upload response:', response)
+      toast.error('头像上传失败：无效的响应')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('头像上传失败:', error)
-    toast.error('头像上传失败，请稍后重试')
+    toast.error(error?.response?.data?.message || '头像上传失败，请稍后重试')
   } finally {
     uploadingAvatar.value = false
     input.value = ''

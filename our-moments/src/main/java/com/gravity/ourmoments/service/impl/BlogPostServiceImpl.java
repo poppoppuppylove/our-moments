@@ -199,6 +199,24 @@ public class BlogPostServiceImpl implements BlogPostService {
             return friendshipService.areFriends(post.getUserId(), currentUserId);
         }
 
+        // Special PARTNER visibility for users 1 and 100
+        if ("PARTNER".equalsIgnoreCase(visibility)) {
+            if (currentUserId == null) {
+                return false;
+            }
+            // Author can always see their own posts
+            if (post.getUserId().equals(currentUserId)) {
+                return true;
+            }
+            // Only users 1 and 100 can see each other's PARTNER posts
+            Long authorId = post.getUserId();
+            if ((authorId == 1L && currentUserId == 100L) ||
+                (authorId == 100L && currentUserId == 1L)) {
+                return true;
+            }
+            return false;
+        }
+
         // Default to not visible for unknown visibility values
         return false;
     }

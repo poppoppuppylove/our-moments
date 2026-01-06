@@ -47,6 +47,7 @@ public class CommentServiceImpl implements CommentService {
             notificationService.sendCommentNotification(
                     post.getUserId(),
                     comment.getUserId(),
+                    comment.getPostId(), // 传递 postId 而不是 commentId
                     comment.getCommentId(),
                     post.getTitle() != null ? post.getTitle() : "未命名文章"
             );
