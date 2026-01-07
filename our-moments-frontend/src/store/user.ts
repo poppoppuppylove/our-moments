@@ -7,6 +7,18 @@ export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('token'))
 
+  // 初始化时尝试从 localStorage 恢复用户数据
+  if (token.value) {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      try {
+        user.value = JSON.parse(storedUser)
+      } catch (e) {
+        console.error('Failed to parse stored user data:', e)
+      }
+    }
+  }
+
   // 计算属性
   const isLoggedIn = computed(() => !!token.value)
   const username = computed(() => user.value?.username || '')
@@ -16,6 +28,8 @@ export const useUserStore = defineStore('user', () => {
   // 方法
   function setUser(userData: User) {
     user.value = userData
+    // 同时存储到 localStorage
+    localStorage.setItem('user', JSON.stringify(userData))
   }
 
   function setToken(newToken: string) {
@@ -27,10 +41,12 @@ export const useUserStore = defineStore('user', () => {
     user.value = null
     token.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
   }
 
   function clearUser() {
     user.value = null
+    localStorage.removeItem('user')
   }
 
   return {

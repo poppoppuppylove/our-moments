@@ -32,6 +32,7 @@ public class ChatController {
     @MessageMapping("/chat")
     public void processMessage(@Payload ChatMessage chatMessage, Principal principal) {
         // 通过用户名获取用户ID
+        if(null == principal){return;}
         String username = principal.getName();
         User user = userService.getUserByUsername(username);
         if (user == null) {

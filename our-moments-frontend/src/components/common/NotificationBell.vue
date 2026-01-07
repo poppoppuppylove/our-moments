@@ -131,6 +131,9 @@ function handleNotificationClick(notification: any) {
     case 'NEW_POST':
       router.push(`/post/${notification.relatedId}`)
       break
+    case 'MESSAGE':
+      router.push(`/chat/${notification.relatedId}`)
+      break
   }
 
   closeDropdown()

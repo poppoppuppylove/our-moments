@@ -56,4 +56,9 @@ public class MessageServiceImpl implements MessageService {
     public void deleteMessage(Long messageId) {
         messageMapper.deleteById(messageId);
     }
+
+    @Override
+    public Message getMessageById(Long messageId) {
+        return messageMapper.selectById(messageId);
+    }
 }

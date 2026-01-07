@@ -30,4 +30,7 @@ public interface MessageMapper {
 
     @Delete("DELETE FROM sys_message WHERE message_id = #{messageId}")
     void deleteById(Long messageId);
+
+    @Select("SELECT * FROM sys_message WHERE message_id = #{messageId}")
+    Message selectById(Long messageId);
 }

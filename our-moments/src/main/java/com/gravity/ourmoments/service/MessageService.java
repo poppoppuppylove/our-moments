@@ -10,4 +10,5 @@ public interface MessageService {
     List<Message> getUnreadMessages(Long userId);
     void markAsRead(Long userId, Long senderId);
     void deleteMessage(Long messageId);
+    Message getMessageById(Long messageId);
 }

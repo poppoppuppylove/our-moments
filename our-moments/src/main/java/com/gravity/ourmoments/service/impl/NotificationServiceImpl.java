@@ -1,13 +1,7 @@
 package com.gravity.ourmoments.service.impl;
 
-import com.gravity.ourmoments.entity.BlogPost;
-import com.gravity.ourmoments.entity.Friendship;
-import com.gravity.ourmoments.entity.Notification;
-import com.gravity.ourmoments.entity.User;
-import com.gravity.ourmoments.mapper.BlogPostMapper;
-import com.gravity.ourmoments.mapper.FriendshipMapper;
-import com.gravity.ourmoments.mapper.NotificationMapper;
-import com.gravity.ourmoments.mapper.UserMapper;
+import com.gravity.ourmoments.entity.*;
+import com.gravity.ourmoments.mapper.*;
 import com.gravity.ourmoments.service.EmailService;
 import com.gravity.ourmoments.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +25,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private BlogPostMapper blogPostMapper;
+
+    @Autowired
+    private MessageMapper messageMapper;
 
     @Autowired
     private EmailService emailService;
@@ -190,7 +187,9 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setUserId(receiverId);
         notification.setType("MESSAGE");
         notification.setContent(senderName + " 给你发送了私信: \"" + shortContent + "\"");
-        notification.setRelatedId(messageId);
+        Message msg=messageMapper.selectById(messageId);
+        Long msgSenderId=msg.getSenderId();
+        notification.setRelatedId(msgSenderId);
         createNotification(notification);
     }
 }
