@@ -6,10 +6,10 @@ import router from '@/router'
 // 创建 axios 实例
 const request: AxiosInstance = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-    timeout: 15000,
-    headers: {
-        'Content-Type': 'application/json'
-    }
+    timeout: 15000
+    // 不设置默认的 Content-Type，让 axios 根据请求体自动设置
+    // 对于 JSON 请求，axios 会自动设置为 application/json
+    // 对于 FormData 请求，axios 会自动设置为 multipart/form-data
 })
 
 // 请求拦截器
@@ -49,6 +49,13 @@ request.interceptors.response.use(
                     break
                 case 403:
                     console.error('没有权限访问该资源')
+                    console.error('403 Error Details:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: response.headers,
+                        data: response.data,
+                        config: error.config
+                    })
                     break
                 case 404:
                     console.error('请求的资源不存在')
@@ -94,9 +101,10 @@ export function upload<T>(url: string, file: File, onProgress?: (percent: number
     const formData = new FormData()
     formData.append('file', file)
 
+    // 明确设置正确的 Content-Type，避免 axios 的 transformRequest 覆盖
     return request.post(url, formData, {
         headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data' // 明确设置为 multipart/form-data
         },
         onUploadProgress: (progressEvent) => {
             if (onProgress && progressEvent.total) {
