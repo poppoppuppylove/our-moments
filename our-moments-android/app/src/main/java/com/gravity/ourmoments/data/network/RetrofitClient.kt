@@ -15,11 +15,20 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val client = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .build()
+    private lateinit var client: OkHttpClient
+
+    fun initialize(authInterceptor: AuthInterceptor) {
+        client = OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            .addInterceptor(authInterceptor)
+            .build()
+    }
 
     val apiService: ApiService by lazy {
+        if (!::client.isInitialized) {
+            throw IllegalStateException("RetrofitClient must be initialized with AuthInterceptor first")
+        }
+
         Retrofit.Builder()
             .baseUrl(Constants.BASE_URL)
             .client(client)

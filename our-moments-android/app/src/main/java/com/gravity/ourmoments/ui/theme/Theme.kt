@@ -7,32 +7,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = SoftPurple,
-    secondary = LightBrown,
-    tertiary = WarmPink,
-    background = Cream,
-    surface = Cream,
-    onPrimary = DarkBrown,
-    onSecondary = DarkBrown,
-    onTertiary = DarkBrown,
-    onBackground = DarkBrown,
-    onSurface = DarkBrown
-)
 
 @Composable
 fun OurMomentsTheme(
@@ -46,8 +26,12 @@ fun OurMomentsTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> darkColorScheme(
+            primary = Purple80,
+            secondary = PurpleGrey80,
+            tertiary = Pink80
+        )
+        else -> PaperTheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
