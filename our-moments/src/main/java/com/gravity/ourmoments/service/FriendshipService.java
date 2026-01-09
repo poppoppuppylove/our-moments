@@ -13,4 +13,8 @@ public interface FriendshipService {
     Friendship rejectFriendRequest(Long friendshipId, Long userId);
     void deleteFriendship(Long userId, Long friendId);
     boolean areFriends(Long userId, Long friendId);
+
+    // Admin support
+    List<Object> getAllFriendships();
+    void deleteFriendship(Long friendshipId);
 }

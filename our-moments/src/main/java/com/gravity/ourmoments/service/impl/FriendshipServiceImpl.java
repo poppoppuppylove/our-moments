@@ -107,4 +107,14 @@ public class FriendshipServiceImpl implements FriendshipService {
         Friendship friendship = friendshipMapper.findByUserAndFriend(userId, friendId);
         return friendship != null && "ACCEPTED".equals(friendship.getStatus());
     }
+
+    @Override
+    public List<Object> getAllFriendships() {
+        return friendshipMapper.findAll().stream().map(f -> (Object) f).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteFriendship(Long friendshipId) {
+        friendshipMapper.deleteById(friendshipId);
+    }
 }

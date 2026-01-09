@@ -6,6 +6,8 @@ import com.gravity.ourmoments.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -39,5 +41,26 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(Long userId) {
         userMapper.deleteById(userId);
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userMapper.findAll();
+    }
+
+    @Override
+    public List<User> getUsersByRole(String role) {
+        return userMapper.findByRole(role);
+    }
+
+    @Override
+    public User updateUserRole(Long userId, String role) {
+        User user = userMapper.findById(userId);
+        if (user != null) {
+            user.setRole(role);
+            userMapper.update(user);
+            return userMapper.findById(userId);
+        }
+        return null;
     }
 }

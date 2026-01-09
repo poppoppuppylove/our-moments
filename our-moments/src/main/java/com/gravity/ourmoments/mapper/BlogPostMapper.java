@@ -24,4 +24,8 @@ public interface BlogPostMapper {
     // Tag relations
     int addTagToPost(@Param("postId") Long postId, @Param("tagId") Long tagId);
     int removeTagsFromPost(Long postId);
+
+    // Draft management
+    List<BlogPost> findDraftsByUserId(@Param("userId") Long userId);
+    BlogPost findLatestDraftByUserId(@Param("userId") Long userId);
 }

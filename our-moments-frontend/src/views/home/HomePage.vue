@@ -64,6 +64,9 @@
           <template v-if="userStore.isLoggedIn">
             <span class="navbar__welcome">欢迎, {{ userStore.nickname }}!</span>
             <NotificationBell />
+            <HandButton variant="ghost" size="sm" @click="goToDrafts">
+              草稿箱
+            </HandButton>
             <HandButton variant="ghost" size="sm" @click="goToFriends">
               好友
             </HandButton>
@@ -116,6 +119,9 @@
                 <template v-if="userStore.isLoggedIn">
                   <button class="mobile-menu__item" @click="handleMobileNotifications">
                     通知
+                  </button>
+                  <button class="mobile-menu__item" @click="handleMobileDrafts">
+                    草稿箱
                   </button>
                   <button class="mobile-menu__item" @click="handleMobileFriends">
                     好友
@@ -407,6 +413,11 @@ function handleMobileFriends() {
   goToFriends()
 }
 
+function handleMobileDrafts() {
+  closeMobileMenu()
+  goToDrafts()
+}
+
 function handleMobileProfile() {
   closeMobileMenu()
   goToProfile()
@@ -554,6 +565,10 @@ function goToProfile() {
 
 function goToFriends() {
   router.push('/friends')
+}
+
+function goToDrafts() {
+  router.push('/drafts')
 }
 
 function handleLogout() {

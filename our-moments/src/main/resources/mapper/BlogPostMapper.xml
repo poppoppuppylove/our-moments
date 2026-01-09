@@ -78,4 +78,12 @@
         DELETE FROM blog_post_tag WHERE post_id = #{postId}
     </delete>
 
+    <select id="findDraftsByUserId" resultMap="BlogPostResultMap">
+        SELECT * FROM blog_post WHERE user_id = #{userId} AND status = 0 ORDER BY create_time DESC
+    </select>
+
+    <select id="findLatestDraftByUserId" resultMap="BlogPostResultMap">
+        SELECT * FROM blog_post WHERE user_id = #{userId} AND status = 0 ORDER BY create_time DESC LIMIT 1
+    </select>
+
 </mapper>

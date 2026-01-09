@@ -12,4 +12,8 @@ public interface BlogPostService {
     BlogPost createPost(BlogPost post);
     BlogPost updatePost(Long postId, BlogPost post);
     void deletePost(Long postId);
+
+    // Draft management
+    List<BlogPost> getDraftsByUserId(Long userId);
+    BlogPost getLatestDraftByUserId(Long userId);
 }

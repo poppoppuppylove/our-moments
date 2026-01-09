@@ -24,6 +24,27 @@
         >
           ✏️ 新建文章
         </router-link>
+        <router-link
+          to="/admin/users"
+          class="nav-item"
+          :class="{ active: isActive('/admin/users') }"
+        >
+          👥 用户管理
+        </router-link>
+        <router-link
+          to="/admin/comments"
+          class="nav-item"
+          :class="{ active: isActive('/admin/comments') }"
+        >
+          💬 评论管理
+        </router-link>
+        <router-link
+          to="/admin/friendships"
+          class="nav-item"
+          :class="{ active: isActive('/admin/friendships') }"
+        >
+          🤝 好友管理
+        </router-link>
       </nav>
 
       <div class="sidebar-footer">

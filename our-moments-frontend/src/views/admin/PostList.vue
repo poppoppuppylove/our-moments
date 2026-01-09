@@ -113,7 +113,7 @@
 import { ref, computed, onMounted } from 'vue'
 import type { BlogPost } from '@/types'
 import { mockPosts } from '@/utils/mock'
-import { postApi } from '@/api'
+import { adminApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
@@ -160,8 +160,8 @@ async function fetchPosts() {
   error.value = ''
 
   try {
-    // 尝试调用后端 API
-    const response = await postApi.getPosts()
+    // 使用管理员 API 获取所有文章
+    const response = await adminApi.getAllPosts()
     posts.value = response
   } catch (err: any) {
     // 如果 API 调用失败，使用 Mock 数据
@@ -181,8 +181,8 @@ async function handleDelete() {
   if (!postToDelete.value) return
 
   try {
-    // 尝试调用后端 API
-    await postApi.deletePost(postToDelete.value.postId)
+    // 使用管理员 API 删除文章
+    await adminApi.deletePost(postToDelete.value.postId)
   } catch (err) {
     // 如果 API 调用失败，本地删除 (Mock 模式)
     console.warn('API call failed, deleting locally')

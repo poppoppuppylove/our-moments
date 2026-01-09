@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '编辑时刻 - Our Moments', requiresAuth: true }
   },
   {
+    path: '/drafts',
+    name: 'Drafts',
+    component: () => import('@/views/post/DraftsPage.vue'),
+    meta: { title: '草稿箱 - Our Moments', requiresAuth: true }
+  },
+  {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/auth/RegisterPage.vue'),
@@ -93,6 +99,24 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminPostEdit',
         component: () => import('@/views/admin/PostEdit.vue'),
         meta: { title: '编辑文章 - Our Moments' }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UserList.vue'),
+        meta: { title: '用户管理 - Our Moments' }
+      },
+      {
+        path: 'comments',
+        name: 'AdminComments',
+        component: () => import('@/views/admin/CommentList.vue'),
+        meta: { title: '评论管理 - Our Moments' }
+      },
+      {
+        path: 'friendships',
+        name: 'AdminFriendships',
+        component: () => import('@/views/admin/FriendshipList.vue'),
+        meta: { title: '好友管理 - Our Moments' }
       }
     ]
   },
@@ -133,6 +157,15 @@ router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
     if (!userStore.isLoggedIn) {
       next({ name: 'Login', query: { redirect: to.fullPath } })
+      return
+    }
+  }
+
+  // 管理员权限验证
+  if (to.path.startsWith('/admin') && to.path !== '/admin/login') {
+    const userStore = useUserStore()
+    if (!userStore.isAdmin) {
+      next({ name: 'Home' })
       return
     }
   }

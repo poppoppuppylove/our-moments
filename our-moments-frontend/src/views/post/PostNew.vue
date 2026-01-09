@@ -10,6 +10,9 @@
             <HandButton variant="ghost" size="sm" @click="goBack">
               取消
             </HandButton>
+            <HandButton variant="secondary" size="sm" @click="saveDraft" :disabled="saving">
+              {{ saving ? '保存中...' : '存草稿' }}
+            </HandButton>
             <HandButton variant="primary" size="sm" @click="publish" :disabled="saving">
               {{ saving ? '保存中...' : '发布' }}
             </HandButton>
@@ -179,7 +182,7 @@ import { useUserStore } from '@/store/user'
 import { toast } from '@/composables/useToast'
 import { isTouchDevice } from '@/composables/useTouchGestures'
 import type { BlogMedia, UploadResponse } from '@/types'
-import { postApi, fileApi } from '@/api'
+import { postApi, fileApi, draftApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
 import HandCard from '@/components/base/HandCard.vue'
@@ -737,8 +740,70 @@ onMounted(() => {
   // 检测移动设备
   isMobile.value = isTouchDevice()
 
-  loadPost()
+  // 如果是新建文章，检查是否有最近的草稿
+  if (!isEdit.value) {
+    checkForDraft()
+  } else {
+    loadPost()
+  }
 })
+
+// 检查是否有最近的草稿
+async function checkForDraft() {
+  try {
+    const draft = await draftApi.getLatestDraft()
+    if (draft) {
+      const shouldLoad = confirm(`检测到您有最近保存的草稿 "${draft.title || '未命名草稿'}"，是否加载继续编辑？`)
+      if (shouldLoad) {
+        populateForm(draft)
+      }
+    }
+  } catch (err) {
+    // 没有草稿或加载失败，继续正常流程
+    console.log('No draft found or failed to load')
+  }
+}
+
+// 保存草稿
+async function saveDraft() {
+  if (!form.title.trim() && !form.content.trim()) {
+    toast.warning('请先输入一些内容再保存草稿')
+    return
+  }
+
+  saving.value = true
+
+  const draftData = {
+    title: form.title || '未命名草稿',
+    content: form.content,
+    weather: form.weather,
+    mood: form.mood,
+    location: form.location,
+    visibility: form.visibility.toUpperCase(),
+    status: 0, // 草稿状态
+    userId: userStore.user?.userId,
+    mediaList: form.mediaList,
+    tagList: form.tags.map((name) => ({
+      name: name
+    }))
+  }
+
+  try {
+    if (isEdit.value) {
+      // 编辑模式下保存草稿
+      await postApi.updatePost(Number(route.params.id), draftData)
+    } else {
+      // 新建模式下保存草稿
+      await postApi.createPost(draftData)
+    }
+    toast.success('草稿已保存！')
+  } catch (err) {
+    console.error('Failed to save draft:', err)
+    toast.error('保存草稿失败，请稍后重试')
+  } finally {
+    saving.value = false
+  }
+}
 
 onUnmounted(() => {
   // 清理定时器

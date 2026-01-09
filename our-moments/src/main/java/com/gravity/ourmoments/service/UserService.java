@@ -9,4 +9,9 @@ public interface UserService {
     User register(User user);
     User updateUser(Long userId, User user);
     void deleteUser(Long userId);
+
+    // Admin support
+    List<User> getAllUsers();
+    List<User> getUsersByRole(String role);
+    User updateUserRole(Long userId, String role);
 }

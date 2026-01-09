@@ -55,4 +55,8 @@
         OR (user_id = #{friendId} AND friend_id = #{userId})
     </delete>
 
+    <select id="findAll" resultMap="FriendshipResultMap">
+        SELECT * FROM sys_friendship ORDER BY create_time DESC
+    </select>
+
 </mapper>

@@ -12,4 +12,8 @@ public interface UserMapper {
     int insert(User user);
     int update(User user);
     int deleteById(Long userId);
+
+    // Admin support
+    List<User> findAll();
+    List<User> findByRole(@Param("role") String role);
 }

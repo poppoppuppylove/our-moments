@@ -50,4 +50,8 @@
         DELETE FROM blog_comment WHERE post_id = #{postId}
     </delete>
 
+    <select id="findAll" resultMap="CommentResultMap">
+        SELECT * FROM blog_comment ORDER BY create_time DESC
+    </select>
+
 </mapper>

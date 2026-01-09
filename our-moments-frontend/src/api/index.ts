@@ -53,6 +53,12 @@ export const postApi = {
     deletePost: (id: number) => del<void>(`/posts/${id}`),
 }
 
+// 草稿相关 API
+export const draftApi = {
+    getDrafts: () => get<BlogPost[]>('/drafts'),
+    getLatestDraft: () => get<BlogPost>('/drafts/latest'),
+}
+
 // 分类相关 API
 export const categoryApi = {
     getAllCategories: () => get<Category[]>('/categories'),
@@ -141,4 +147,27 @@ export const messageApi = {
         put<void>(`/messages/read`, null, { params: { senderId } }),
     deleteMessage: (messageId: number) =>
         del<void>(`/messages/${messageId}`)
+}
+
+// 管理员 API
+export const adminApi = {
+    // 用户管理
+    getAllUsers: () => get<User[]>('/admin/users'),
+    getUsersByRole: (role: string) => get<User[]>(`/admin/users/role/${role}`),
+    updateUserRole: (userId: number, role: string) => put<User>(`/admin/users/${userId}/role`, { role }),
+    deleteUser: (userId: number) => del<void>(`/admin/users/${userId}`),
+
+    // 帖子管理
+    getAllPosts: () => get<BlogPost[]>('/admin/posts'),
+    updatePost: (postId: number, data: Partial<PostRequest>) =>
+        put<BlogPost>(`/admin/posts/${postId}`, data),
+    deletePost: (postId: number) => del<void>(`/admin/posts/${postId}`),
+
+    // 评论管理
+    getAllComments: () => get<Comment[]>('/admin/comments'),
+    deleteComment: (commentId: number) => del<void>(`/admin/comments/${commentId}`),
+
+    // 好友管理
+    getAllFriendships: () => get<any[]>('/admin/friendships'),
+    deleteFriendship: (friendshipId: number) => del<void>(`/admin/friendships/${friendshipId}`)
 }

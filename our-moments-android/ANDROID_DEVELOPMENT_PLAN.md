@@ -250,7 +250,7 @@ app/
 ├── res/                               # 资源文件
 │   ├── drawable/                      # 图片资源
 │   │   ├── ic_launcher_foreground.xml
-│   │   ├── ic_launcher_background.xml
+│   │   ├── ic_launcher_background.xml dev
 │   │   ├── tape_yellow_drawable.xml
 │   │   ├── tape_pink_drawable.xml
 │   │   ├── tape_blue_drawable.xml

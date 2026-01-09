@@ -44,4 +44,12 @@
         DELETE FROM sys_user WHERE user_id = #{userId}
     </delete>
 
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT * FROM sys_user ORDER BY create_time DESC
+    </select>
+
+    <select id="findByRole" resultMap="UserResultMap">
+        SELECT * FROM sys_user WHERE role = #{role} ORDER BY create_time DESC
+    </select>
+
 </mapper>

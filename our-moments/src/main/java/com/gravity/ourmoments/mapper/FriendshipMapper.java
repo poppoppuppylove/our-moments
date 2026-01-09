@@ -15,4 +15,7 @@ public interface FriendshipMapper {
     int update(Friendship friendship);
     int deleteById(Long friendshipId);
     int deleteByUserAndFriend(@Param("userId") Long userId, @Param("friendId") Long friendId);
+
+    // Admin support
+    List<Friendship> findAll();
 }

@@ -14,4 +14,7 @@ public interface CommentMapper {
     int update(Comment comment);
     int deleteById(Long commentId);
     int deleteByPostId(Long postId);
+
+    // Admin support
+    List<Comment> findAll();
 }

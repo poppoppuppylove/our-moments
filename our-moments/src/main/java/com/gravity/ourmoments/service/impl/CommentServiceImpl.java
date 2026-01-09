@@ -72,4 +72,9 @@ public class CommentServiceImpl implements CommentService {
     public void deleteCommentsByPostId(Long postId) {
         commentMapper.deleteByPostId(postId);
     }
+
+    @Override
+    public List<Comment> getAllComments() {
+        return commentMapper.findAll();
+    }
 }

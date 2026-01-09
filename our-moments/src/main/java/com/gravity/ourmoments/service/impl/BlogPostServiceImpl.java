@@ -220,4 +220,14 @@ public class BlogPostServiceImpl implements BlogPostService {
         // Default to not visible for unknown visibility values
         return false;
     }
+
+    @Override
+    public List<BlogPost> getDraftsByUserId(Long userId) {
+        return blogPostMapper.findDraftsByUserId(userId);
+    }
+
+    @Override
+    public BlogPost getLatestDraftByUserId(Long userId) {
+        return blogPostMapper.findLatestDraftByUserId(userId);
+    }
 }
