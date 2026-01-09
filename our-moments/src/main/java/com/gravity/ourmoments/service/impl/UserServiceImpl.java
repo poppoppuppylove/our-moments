@@ -63,4 +63,15 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    @Override
+    public User resetPassword(Long userId, String newPassword) {
+        User user = userMapper.findById(userId);
+        if (user != null) {
+            user.setPassword(newPassword);
+            userMapper.update(user);
+            return userMapper.findById(userId);
+        }
+        return null;
+    }
 }

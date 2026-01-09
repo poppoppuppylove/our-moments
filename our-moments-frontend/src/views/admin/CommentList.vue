@@ -25,17 +25,51 @@
           </div>
           <span class="comment-date">{{ formatDate(comment.createTime) }}</span>
         </div>
-        <p class="comment-content">{{ comment.content }}</p>
+        <p class="comment-content" v-if="!editingId || editingId !== comment.commentId">{{ comment.content }}</p>
+        <HandTextarea
+          v-else
+          v-model="editContent"
+          :rows="3"
+          class="edit-textarea"
+        />
         <div class="comment-meta">
           <span class="post-reference">文章ID: {{ comment.postId }}</span>
-          <HandButton
-            variant="danger"
-            size="sm"
-            @click="deleteComment(comment.commentId)"
-            :loading="deletingId === comment.commentId"
-          >
-            删除评论
-          </HandButton>
+          <div class="comment-actions">
+            <template v-if="editingId && editingId === comment.commentId">
+              <HandButton
+                variant="ghost"
+                size="sm"
+                @click="cancelEdit"
+              >
+                取消
+              </HandButton>
+              <HandButton
+                variant="primary"
+                size="sm"
+                @click="saveComment(comment.commentId)"
+                :loading="savingId === comment.commentId"
+              >
+                保存
+              </HandButton>
+            </template>
+            <template v-else>
+              <HandButton
+                variant="ghost"
+                size="sm"
+                @click="startEdit(comment)"
+              >
+                编辑
+              </HandButton>
+              <HandButton
+                variant="danger"
+                size="sm"
+                @click="deleteComment(comment.commentId)"
+                :loading="deletingId === comment.commentId"
+              >
+                删除
+              </HandButton>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -55,9 +89,13 @@ import { adminApi } from '@/api'
 import type { Comment } from '@/types'
 import HandButton from '@/components/base/HandButton.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
+import HandTextarea from '@/components/base/HandTextarea.vue'
 
 const loading = ref(false)
 const deletingId = ref<number | null>(null)
+const savingId = ref<number | null>(null)
+const editingId = ref<number | null>(null)
+const editContent = ref('')
 const comments = ref<Comment[]>([])
 
 onMounted(() => {
@@ -86,6 +124,40 @@ function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function startEdit(comment: Comment) {
+  editingId.value = comment.commentId
+  editContent.value = comment.content || ''
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editContent.value = ''
+}
+
+async function saveComment(commentId: number) {
+  savingId.value = commentId
+  try {
+    const updatedComment = await adminApi.updateComment(commentId, {
+      content: editContent.value
+    })
+
+    // 更新本地数据
+    const index = comments.value.findIndex(c => c.commentId === commentId)
+    if (index !== -1) {
+      comments.value[index] = updatedComment
+    }
+
+    editingId.value = null
+    editContent.value = ''
+    toast.success('评论已更新')
+  } catch (err) {
+    console.error('Failed to update comment:', err)
+    toast.error('更新评论失败')
+  } finally {
+    savingId.value = null
+  }
 }
 
 async function deleteComment(commentId: number) {

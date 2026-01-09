@@ -2,9 +2,14 @@
   <div class="friendship-list">
     <header class="page-header">
       <h1 class="page-title">好友管理</h1>
-      <HandButton variant="primary" size="sm" @click="loadFriendships">
-        刷新
-      </HandButton>
+      <div class="header-actions">
+        <HandButton variant="primary" size="sm" @click="showCreateFriendshipModal">
+          新增好友关系
+        </HandButton>
+        <HandButton variant="ghost" size="sm" @click="loadFriendships">
+          刷新
+        </HandButton>
+      </div>
     </header>
 
     <!-- 加载状态 -->
@@ -35,6 +40,13 @@
         <div class="table-cell">{{ formatDate(friendship.updateTime) }}</div>
         <div class="table-cell actions-cell">
           <HandButton
+            variant="ghost"
+            size="sm"
+            @click="editFriendshipStatus(friendship)"
+          >
+            修改状态
+          </HandButton>
+          <HandButton
             variant="danger"
             size="sm"
             @click="deleteFriendship(friendship.friendshipId)"
@@ -51,19 +63,75 @@
       <div class="empty-icon">🤝</div>
       <p class="empty-text">暂无好友关系</p>
     </div>
+
+    <!-- 新增/编辑好友关系弹窗 -->
+    <Transition name="modal">
+      <div v-if="showFriendshipModal" class="modal-overlay" @click="closeFriendshipModal">
+        <div class="modal-content" @click.stop>
+          <h2 class="modal-title">{{ editingFriendship ? '修改好友关系状态' : '新增好友关系' }}</h2>
+          <p v-if="editingFriendship" class="modal-subtitle">
+            关系ID: {{ editingFriendship.friendshipId }}
+          </p>
+
+          <div class="form-group" v-if="!editingFriendship">
+            <label class="form-label">用户ID</label>
+            <HandInput v-model="friendshipForm.userId" type="number" placeholder="请输入用户ID" />
+          </div>
+
+          <div class="form-group" v-if="!editingFriendship">
+            <label class="form-label">好友ID</label>
+            <HandInput v-model="friendshipForm.friendId" type="number" placeholder="请输入好友ID" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">状态</label>
+            <HandSelect
+              v-model="friendshipForm.status"
+              :options="[
+                { value: 'PENDING', label: '待处理' },
+                { value: 'ACCEPTED', label: '已接受' },
+                { value: 'REJECTED', label: '已拒绝' }
+              ]"
+              placeholder="请选择状态"
+            />
+          </div>
+
+          <div class="modal-actions">
+            <HandButton variant="ghost" @click="closeFriendshipModal">
+              取消
+            </HandButton>
+            <HandButton variant="primary" @click="saveFriendship" :loading="savingFriendship">
+              保存
+            </HandButton>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { toast } from '@/composables/useToast'
 import { adminApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
+import HandInput from '@/components/base/HandInput.vue'
+import HandSelect from '@/components/base/HandSelect.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
 
 const loading = ref(false)
 const deletingId = ref<number | null>(null)
+const savingFriendship = ref(false)
 const friendships = ref<any[]>([])
+
+// 好友关系编辑弹窗
+const showFriendshipModal = ref(false)
+const editingFriendship = ref<any | null>(null)
+const friendshipForm = reactive({
+  userId: 0,
+  friendId: 0,
+  status: 'PENDING'
+})
 
 onMounted(() => {
   loadFriendships()
@@ -100,6 +168,68 @@ function getStatusText(status: string): string {
     'REJECTED': '已拒绝'
   }
   return statusMap[status] || status
+}
+
+function showCreateFriendshipModal() {
+  editingFriendship.value = null
+  friendshipForm.userId = 0
+  friendshipForm.friendId = 0
+  friendshipForm.status = 'PENDING'
+  showFriendshipModal.value = true
+}
+
+function editFriendshipStatus(friendship: any) {
+  editingFriendship.value = friendship
+  friendshipForm.userId = friendship.userId
+  friendshipForm.friendId = friendship.friendId
+  friendshipForm.status = friendship.status || 'PENDING'
+  showFriendshipModal.value = true
+}
+
+function closeFriendshipModal() {
+  showFriendshipModal.value = false
+  editingFriendship.value = null
+}
+
+async function saveFriendship() {
+  savingFriendship.value = true
+  try {
+    let savedFriendship: any
+
+    if (editingFriendship.value) {
+      // 修改好友关系状态
+      savedFriendship = await adminApi.updateFriendshipStatus(
+        editingFriendship.value.friendshipId,
+        friendshipForm.status
+      )
+      toast.success('好友关系状态已更新')
+    } else {
+      // 创建新的好友关系
+      savedFriendship = await adminApi.createFriendship({
+        userId: friendshipForm.userId,
+        friendId: friendshipForm.friendId,
+        status: friendshipForm.status
+      })
+      toast.success('好友关系已创建')
+    }
+
+    // 更新本地数据
+    if (editingFriendship.value) {
+      const index = friendships.value.findIndex(f => f.friendshipId === editingFriendship.value?.friendshipId)
+      if (index !== -1) {
+        friendships.value[index] = savedFriendship
+      }
+    } else {
+      friendships.value.push(savedFriendship)
+    }
+
+    closeFriendshipModal()
+  } catch (err) {
+    console.error('Failed to save friendship:', err)
+    toast.error(editingFriendship.value ? '更新好友关系状态失败' : '创建好友关系失败')
+  } finally {
+    savingFriendship.value = false
+  }
 }
 
 async function deleteFriendship(friendshipId: number) {
@@ -145,7 +275,7 @@ async function deleteFriendship(friendshipId: number) {
 
 .table-header {
   display: grid;
-  grid-template-columns: 80px 80px 80px 100px 150px 150px 120px;
+  grid-template-columns: 80px 80px 80px 100px 150px 150px 150px;
   background: var(--color-paper);
   padding: 12px 16px;
   font-weight: 500;
@@ -154,7 +284,7 @@ async function deleteFriendship(friendshipId: number) {
 
 .table-row {
   display: grid;
-  grid-template-columns: 80px 80px 80px 100px 150px 150px 120px;
+  grid-template-columns: 80px 80px 80px 100px 150px 150px 150px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-ink-lighter);
   font-size: 0.9rem;
@@ -203,6 +333,10 @@ async function deleteFriendship(friendshipId: number) {
   }
 }
 
+.form-group {
+  margin-bottom: 20px;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -224,7 +358,7 @@ async function deleteFriendship(friendshipId: number) {
 @media (max-width: 1200px) {
   .table-header,
   .table-row {
-    grid-template-columns: 60px 60px 60px 80px 120px 120px 100px;
+    grid-template-columns: 60px 60px 60px 80px 120px 120px 120px;
     font-size: 0.85rem;
   }
 }
@@ -232,7 +366,7 @@ async function deleteFriendship(friendshipId: number) {
 @media (max-width: 992px) {
   .table-header,
   .table-row {
-    grid-template-columns: 60px 60px 60px 80px 100px 100px 100px;
+    grid-template-columns: 60px 60px 60px 80px 100px 100px 120px;
   }
 }
 
@@ -243,8 +377,8 @@ async function deleteFriendship(friendshipId: number) {
 
   .table-header,
   .table-row {
-    grid-template-columns: 60px 60px 60px 80px 120px 120px 100px;
-    min-width: 600px;
+    grid-template-columns: 60px 60px 60px 80px 120px 120px 120px;
+    min-width: 620px;
   }
 
   .friendship-list {

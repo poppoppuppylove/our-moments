@@ -2,9 +2,14 @@
   <div class="user-list">
     <header class="page-header">
       <h1 class="page-title">用户管理</h1>
-      <HandButton variant="primary" size="sm" @click="loadUsers">
-        刷新
-      </HandButton>
+      <div class="header-actions">
+        <HandButton variant="primary" size="sm" @click="showCreateUserModal">
+          新增用户
+        </HandButton>
+        <HandButton variant="ghost" size="sm" @click="loadUsers">
+          刷新
+        </HandButton>
+      </div>
     </header>
 
     <!-- 加载状态 -->
@@ -37,10 +42,9 @@
           <HandButton
             variant="ghost"
             size="sm"
-            @click="editUserRole(user)"
-            :disabled="userStore.user?.userId === user.userId"
+            @click="editUser(user)"
           >
-            修改角色
+            编辑
           </HandButton>
           <HandButton
             variant="danger"
@@ -55,37 +59,66 @@
       </div>
     </div>
 
-    <!-- 角色编辑弹窗 -->
+    <!-- 用户编辑弹窗 -->
     <Transition name="modal">
-      <div v-if="showRoleModal" class="modal-overlay" @click="closeRoleModal">
+      <div v-if="showUserModal" class="modal-overlay" @click="closeUserModal">
         <div class="modal-content" @click.stop>
-          <h2 class="modal-title">修改用户角色</h2>
-          <p class="modal-subtitle">用户: {{ selectedUser?.username }}</p>
+          <h2 class="modal-title">{{ editingUser ? '编辑用户' : '新增用户' }}</h2>
+          <p v-if="editingUser" class="modal-subtitle">用户: {{ editingUser?.username }}</p>
 
-          <div class="role-options">
-            <label class="role-option">
-              <input
-                type="radio"
-                v-model="newRole"
-                value="USER"
-              />
-              <span class="role-label">普通用户</span>
-            </label>
-            <label class="role-option">
-              <input
-                type="radio"
-                v-model="newRole"
-                value="ADMIN"
-              />
-              <span class="role-label">管理员</span>
-            </label>
+          <div class="form-group">
+            <label class="form-label">用户ID</label>
+            <HandInput v-model="userForm.userId" type="number" :disabled="true" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">用户名</label>
+            <HandInput v-model="userForm.username" placeholder="请输入用户名" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">昵称</label>
+            <HandInput v-model="userForm.nickname" placeholder="请输入昵称" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">邮箱</label>
+            <HandInput v-model="userForm.email" placeholder="请输入邮箱" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">头像URL</label>
+            <HandInput v-model="userForm.avatar" placeholder="请输入头像URL" />
+          </div>
+
+          <div class="form-group" v-if="!editingUser">
+            <label class="form-label">密码</label>
+            <HandInput v-model="userForm.password" type="password" placeholder="默认密码为123456" />
+          </div>
+
+          <div class="form-group" v-if="editingUser">
+            <label class="form-label">密码</label>
+            <HandButton variant="outline" size="sm" @click="resetPassword" :loading="resettingPassword">
+              重置密码为123456
+            </HandButton>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">角色</label>
+            <HandRadioGroup
+              v-model="userForm.role"
+              :options="[
+                { value: 'USER', label: '普通用户' },
+                { value: 'ADMIN', label: '管理员' }
+              ]"
+            />
           </div>
 
           <div class="modal-actions">
-            <HandButton variant="ghost" @click="closeRoleModal">
+            <HandButton variant="ghost" @click="closeUserModal">
               取消
             </HandButton>
-            <HandButton variant="primary" @click="saveUserRole">
+            <HandButton variant="primary" @click="saveUser" :loading="savingUser">
               保存
             </HandButton>
           </div>
@@ -96,18 +129,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { toast } from '@/composables/useToast'
 import { adminApi } from '@/api'
 import type { User } from '@/types'
 import HandButton from '@/components/base/HandButton.vue'
+import HandInput from '@/components/base/HandInput.vue'
+import HandRadioGroup from '@/components/base/HandRadioGroup.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
 const deletingId = ref<number | null>(null)
+const savingUser = ref(false)
+const resettingPassword = ref(false)
 const users = ref<User[]>([])
+
+// 用户编辑弹窗
+const showUserModal = ref(false)
+const editingUser = ref<User | null>(null)
+const userForm = reactive({
+  userId: 0,
+  username: '',
+  nickname: '',
+  email: '',
+  avatar: '',
+  password: '',
+  role: 'USER'
+})
 
 // 角色编辑弹窗
 const showRoleModal = ref(false)
@@ -140,6 +190,104 @@ function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function showCreateUserModal() {
+  editingUser.value = null
+  userForm.username = ''
+  userForm.nickname = ''
+  userForm.email = ''
+  userForm.password = ''
+  userForm.role = 'USER'
+  showUserModal.value = true
+}
+
+function editUser(user: User) {
+  editingUser.value = user
+  userForm.userId = user.userId || 0
+  userForm.username = user.username || ''
+  userForm.nickname = user.nickname || ''
+  userForm.email = user.email || ''
+  userForm.avatar = user.avatar || ''
+  userForm.password = ''
+  userForm.role = user.role || 'USER'
+  showUserModal.value = true
+}
+
+function closeUserModal() {
+  showUserModal.value = false
+  editingUser.value = null
+}
+
+async function saveUser() {
+  savingUser.value = true
+  try {
+    let savedUser: User
+
+    if (editingUser.value) {
+      // 编辑用户
+      savedUser = await adminApi.updateUser(editingUser.value.userId!, {
+        username: userForm.username,
+        nickname: userForm.nickname,
+        email: userForm.email,
+        avatar: userForm.avatar,
+        role: userForm.role
+      })
+      toast.success('用户信息已更新')
+    } else {
+      // 创建用户
+      savedUser = await adminApi.createUser({
+        username: userForm.username,
+        nickname: userForm.nickname,
+        email: userForm.email,
+        avatar: userForm.avatar,
+        password: userForm.password || '123456',
+        role: userForm.role
+      })
+      toast.success('用户已创建，初始密码为123456')
+    }
+
+    // 更新本地数据
+    if (editingUser.value) {
+      const userIndex = users.value.findIndex(u => u.userId === editingUser.value?.userId)
+      if (userIndex !== -1) {
+        users.value[userIndex] = savedUser
+      }
+    } else {
+      users.value.push(savedUser)
+    }
+
+    closeUserModal()
+  } catch (err) {
+    console.error('Failed to save user:', err)
+    toast.error(editingUser.value ? '更新用户信息失败' : '创建用户失败')
+  } finally {
+    savingUser.value = false
+  }
+}
+
+async function resetPassword() {
+  if (!editingUser.value) return
+
+  resettingPassword.value = true
+  try {
+    const updatedUser = await adminApi.resetUserPassword(editingUser.value.userId!)
+    toast.success('用户密码已重置为123456')
+
+    // 更新本地数据
+    const userIndex = users.value.findIndex(u => u.userId === editingUser.value?.userId)
+    if (userIndex !== -1) {
+      users.value[userIndex] = updatedUser
+    }
+
+    // 重置表单中的用户对象
+    editingUser.value = updatedUser
+  } catch (err) {
+    console.error('Failed to reset password:', err)
+    toast.error('重置用户密码失败')
+  } finally {
+    resettingPassword.value = false
+  }
 }
 
 function editUserRole(user: User) {
@@ -248,10 +396,26 @@ async function deleteUser(userId: number) {
   white-space: nowrap;
 }
 
+.table-header .table-cell {
+  align-items: flex-start;
+  padding-top: 10px;
+}
+
+.table-header .table-cell:last-child {
+  padding-left: 16px;
+  display: flex;
+  align-items: flex-start;
+}
+
 .actions-cell {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.actions-cell .hand-button {
+  margin-top: 2px;
 }
 
 .role-badge {
@@ -312,6 +476,10 @@ async function deleteUser(userId: number) {
   margin: 20px 0;
 }
 
+.form-group {
+  margin-bottom: 20px;
+}
+
 .role-option {
   display: flex;
   align-items: center;
@@ -367,6 +535,14 @@ async function deleteUser(userId: number) {
   .table-row {
     grid-template-columns: 60px 100px 100px 120px 80px 120px 160px;
   }
+
+  .table-header .table-cell:last-child {
+    padding-top: 6px;
+  }
+
+  .actions-cell .hand-button {
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 992px) {
@@ -374,6 +550,14 @@ async function deleteUser(userId: number) {
   .table-row {
     grid-template-columns: 60px 80px 80px 100px 70px 100px 140px;
     font-size: 0.85rem;
+  }
+
+  .table-header .table-cell:last-child {
+    padding-top: 6px;
+  }
+
+  .actions-cell .hand-button {
+    margin-top: 0;
   }
 }
 
@@ -386,6 +570,14 @@ async function deleteUser(userId: number) {
   .table-row {
     grid-template-columns: 60px 100px 100px 120px 80px 120px 140px;
     min-width: 700px;
+  }
+
+  .table-header .table-cell:last-child {
+    padding-top: 6px;
+  }
+
+  .actions-cell .hand-button {
+    margin-top: 0;
   }
 
   .modal-content {

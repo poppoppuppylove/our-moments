@@ -114,6 +114,23 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
+    public Friendship createFriendship(Friendship friendship) {
+        friendshipMapper.insert(friendship);
+        return friendshipMapper.findById(friendship.getFriendshipId());
+    }
+
+    @Override
+    public Friendship updateFriendshipStatus(Long friendshipId, String status) {
+        Friendship friendship = friendshipMapper.findById(friendshipId);
+        if (friendship != null) {
+            friendship.setStatus(status);
+            friendshipMapper.update(friendship);
+            return friendshipMapper.findById(friendshipId);
+        }
+        return null;
+    }
+
+    @Override
     public void deleteFriendship(Long friendshipId) {
         friendshipMapper.deleteById(friendshipId);
     }

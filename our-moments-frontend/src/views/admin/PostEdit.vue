@@ -155,7 +155,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { BlogMedia, UploadResponse } from '@/types'
 import { mockPosts } from '@/utils/mock'
-import { postApi, fileApi } from '@/api'
+import { postApi, fileApi, adminApi } from '@/api'
 import HandButton from '@/components/base/HandButton.vue'
 import HandInput from '@/components/base/HandInput.vue'
 import HandLoading from '@/components/common/HandLoading.vue'
@@ -189,9 +189,15 @@ async function loadPost() {
   loading.value = true
 
   try {
-    // 尝试调用后端 API
-    const post = await postApi.getPost(postId)
-    populateForm(post)
+    // 尝试调用管理员 API 以无视可见性限制
+    const post = await adminApi.getAllPosts().then(posts => posts.find(p => p.postId === postId))
+    if (post) {
+      populateForm(post)
+    } else {
+      // 如果管理员 API 未找到，尝试普通 API
+      const post = await postApi.getPost(postId)
+      populateForm(post)
+    }
   } catch (err) {
     // 如果 API 调用失败，使用 Mock 数据
     console.warn('API call failed, using mock data')
@@ -317,8 +323,10 @@ async function savePost(status: number) {
 
   try {
     if (isEdit.value) {
-      await postApi.updatePost(Number(route.params.id), postData)
+      // 使用管理员 API 更新文章
+      await adminApi.updatePost(Number(route.params.id), postData)
     } else {
+      // 创建文章仍然使用普通 API
       await postApi.createPost(postData)
     }
     router.push('/admin/posts')

@@ -16,5 +16,7 @@ public interface FriendshipService {
 
     // Admin support
     List<Object> getAllFriendships();
+    Friendship createFriendship(Friendship friendship);
+    Friendship updateFriendshipStatus(Long friendshipId, String status);
     void deleteFriendship(Long friendshipId);
 }

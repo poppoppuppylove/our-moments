@@ -153,8 +153,11 @@ export const messageApi = {
 export const adminApi = {
     // 用户管理
     getAllUsers: () => get<User[]>('/admin/users'),
-    getUsersByRole: (role: string) => get<User[]>(`/admin/users/role/${role}`),
+    getUser: (userId: number) => get<User>(`/admin/users/${userId}`),
+    createUser: (data: Partial<User>) => post<User>('/admin/users', data),
+    updateUser: (userId: number, data: Partial<User>) => put<User>(`/admin/users/${userId}`, data),
     updateUserRole: (userId: number, role: string) => put<User>(`/admin/users/${userId}/role`, { role }),
+    resetUserPassword: (userId: number) => put<User>(`/admin/users/${userId}/password`, {}),
     deleteUser: (userId: number) => del<void>(`/admin/users/${userId}`),
 
     // 帖子管理
@@ -165,9 +168,14 @@ export const adminApi = {
 
     // 评论管理
     getAllComments: () => get<Comment[]>('/admin/comments'),
+    updateComment: (commentId: number, data: Partial<Comment>) =>
+        put<Comment>(`/admin/comments/${commentId}`, data),
     deleteComment: (commentId: number) => del<void>(`/admin/comments/${commentId}`),
 
     // 好友管理
     getAllFriendships: () => get<any[]>('/admin/friendships'),
+    createFriendship: (data: any) => post<any>('/admin/friendships', data),
+    updateFriendshipStatus: (friendshipId: number, status: string) =>
+        put<any>(`/admin/friendships/${friendshipId}/status`, { status }),
     deleteFriendship: (friendshipId: number) => del<void>(`/admin/friendships/${friendshipId}`)
 }

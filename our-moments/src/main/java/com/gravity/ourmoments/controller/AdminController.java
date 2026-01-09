@@ -3,6 +3,7 @@ package com.gravity.ourmoments.controller;
 import com.gravity.ourmoments.entity.BlogPost;
 import com.gravity.ourmoments.entity.Comment;
 import com.gravity.ourmoments.entity.User;
+import com.gravity.ourmoments.entity.Friendship;
 import com.gravity.ourmoments.security.CustomUserDetails;
 import com.gravity.ourmoments.service.BlogPostService;
 import com.gravity.ourmoments.service.CommentService;
@@ -15,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -53,6 +55,47 @@ public class AdminController {
         return ResponseEntity.ok(users);
     }
 
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        // Set default password if not provided
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            user.setPassword("123456");
+        }
+
+        User createdUser = userService.register(user);
+        return ResponseEntity.ok(createdUser);
+    }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<User> getUser(@PathVariable Long userId) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<User> updateUser(@PathVariable Long userId, @RequestBody User user) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        User updatedUser = userService.updateUser(userId, user);
+        if (updatedUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @PutMapping("/users/{userId}/role")
     public ResponseEntity<User> updateUserRole(@PathVariable Long userId, @RequestBody User user) {
         if (!isCurrentUserAdmin()) {
@@ -60,6 +103,19 @@ public class AdminController {
         }
 
         User updatedUser = userService.updateUserRole(userId, user.getRole());
+        if (updatedUser == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PutMapping("/users/{userId}/password")
+    public ResponseEntity<User> resetUserPassword(@PathVariable Long userId) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        User updatedUser = userService.resetPassword(userId, "123456");
         if (updatedUser == null) {
             return ResponseEntity.notFound().build();
         }
@@ -119,6 +175,16 @@ public class AdminController {
         return ResponseEntity.ok(comments);
     }
 
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<Comment> updateComment(@PathVariable Long commentId, @RequestBody Comment comment) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Comment updatedComment = commentService.updateComment(commentId, comment);
+        return ResponseEntity.ok(updatedComment);
+    }
+
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         if (!isCurrentUserAdmin()) {
@@ -138,6 +204,49 @@ public class AdminController {
 
         List<Object> friendships = friendshipService.getAllFriendships();
         return ResponseEntity.ok(friendships);
+    }
+
+    @PostMapping("/friendships")
+    public ResponseEntity<Object> createFriendship(@RequestBody Map<String, Object> payload) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            Long friendId = Long.valueOf(payload.get("friendId").toString());
+            String status = (String) payload.getOrDefault("status", "PENDING");
+
+            // Create friendship object
+            Friendship friendship = new Friendship();
+            friendship.setUserId(userId);
+            friendship.setFriendId(friendId);
+            friendship.setStatus(status);
+
+            // Use friendship service to create the friendship
+            Friendship createdFriendship = friendshipService.createFriendship(friendship);
+            return ResponseEntity.ok(createdFriendship);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/friendships/{friendshipId}/status")
+    public ResponseEntity<Friendship> updateFriendshipStatus(@PathVariable Long friendshipId, @RequestBody Map<String, String> payload) {
+        if (!isCurrentUserAdmin()) {
+            return ResponseEntity.status(403).build();
+        }
+
+        String status = payload.get("status");
+        if (status == null || status.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Friendship updatedFriendship = friendshipService.updateFriendshipStatus(friendshipId, status);
+        if (updatedFriendship == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedFriendship);
     }
 
     @DeleteMapping("/friendships/{friendshipId}")

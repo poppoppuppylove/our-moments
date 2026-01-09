@@ -14,4 +14,5 @@ public interface UserService {
     List<User> getAllUsers();
     List<User> getUsersByRole(String role);
     User updateUserRole(Long userId, String role);
+    User resetPassword(Long userId, String newPassword);
 }
